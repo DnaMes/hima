@@ -3,7 +3,7 @@
 Hima ships as source: a checksummed `hima-<version>.tar.gz` attached to a GitHub
 release. There is no store upload and no packaged binary.
 
-Current version: **0.36.0** (`package.json` is the single source of truth;
+Current version: **0.36.1** (`package.json` is the single source of truth;
 `src/shared/app-meta.ts` reads it).
 
 ## Cutting a release

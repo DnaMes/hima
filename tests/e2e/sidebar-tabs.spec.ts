@@ -67,6 +67,28 @@ test("shows the persistent account and folder bar instead of a sidebar, names th
   await expect(page.getByRole("tab", { name: "Archive" })).toBeVisible();
   await expect(page.locator(".account-identity")).toContainText("work@example.test");
 
+  // Keyboard navigation & roving tabindex on account tabs
+  await expect(workTab).toHaveAttribute("tabindex", "0");
+  const syntheticTab = page.getByRole("tab", { name: "synthetic" });
+  await expect(syntheticTab).toHaveAttribute("tabindex", "-1");
+  await workTab.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(syntheticTab).toHaveAttribute("aria-selected", "true");
+  await expect(syntheticTab).toBeFocused();
+
+  // Keyboard navigation & roving tabindex on mailbox tabs
+  const inboxTab = page.getByRole("tab", { name: "INBOX" });
+  await expect(inboxTab).toHaveAttribute("tabindex", "0");
+  await inboxTab.focus();
+  await page.keyboard.press("ArrowRight");
+  const sentTab = page.getByRole("tab", { name: "Sent" });
+  await expect(sentTab).toHaveAttribute("aria-selected", "true");
+  await expect(sentTab).toBeFocused();
+
+  // Semantic cleanliness: tablists contain only role="tab" elements
+  expect(await page.locator(".account-tabs > :not([role='tab'])").count()).toBe(0);
+  expect(await page.locator(".mailbox-tabs > :not([role='tab'])").count()).toBe(0);
+
   // The bar survives a reload
   await page.reload();
   await expect(page.locator(".mailbox-bar .mailbox-tabs")).toBeVisible();

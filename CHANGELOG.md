@@ -2,6 +2,20 @@
 
 All notable changes to the standalone Himalaya Web GUI are documented here.
 
+## 0.36.1 — 2026-10-26
+
+- Cleaned up obsolete sidebar state and helpers:
+  - Removed dead state (`accountFilter`, `accountFilterMode`, `mailboxFilterMode`, `accountFavorites`, `mailboxFavorites`, `expandedAccounts`) and associated handlers.
+  - Removed unused preferences helpers (`filterAccounts`, `filterMailboxes`, `mailboxFavoriteKey`, `ACCOUNT_FAVORITES_KEY`, `MAILBOX_FAVORITES_KEY`) and simplified `chooseMailbox`.
+- Accessibility and tab semantics polish:
+  - Implemented roving tabindex on account and mailbox tabs (`tabindex="0"` on the active tab, `-1` on inactive tabs) with full arrow-key keyboard navigation (ArrowLeft/ArrowRight, ArrowUp/ArrowDown, Home, End).
+  - Wired `aria-controls` to the workspace and message tabpanels.
+  - Moved empty-state and mailbox status/alert elements outside of `role="tablist"` to enforce valid ARIA tree semantics.
+  - Kept warning indicator badge out of the tab's accessible name (`aria-hidden="true"` with tooltip title).
+- Layout & release polish:
+  - Added `100vh` fallback alongside `100dvh` on `.app-shell`.
+  - Added release workflow validation in the public repo requiring tagged releases to be on `main` and safe string matching in release notes extraction.
+
 ## 0.36.0 — 2026-10-26
 
 - Persistent mailbox bar:

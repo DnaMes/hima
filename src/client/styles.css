@@ -76,6 +76,7 @@ button:active:not(:disabled):not([aria-disabled="true"]) {
 }
 
 .app-shell {
+  height: 100vh;
   height: 100dvh;
   box-sizing: border-box;
   display: flex;
@@ -599,6 +600,19 @@ select option { background: var(--panel); color: var(--text); }
   font-weight: 600;
   border-color: color-mix(in srgb, var(--accent) 60%, transparent);
   box-shadow: 0 2px 8px rgba(0, 0, 0, .22), inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.mailbox-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+.mailbox-tabs-bar::-webkit-scrollbar { display: none; }
+.mailbox-tabs-bar .mailbox-tabs {
+  padding: 0;
 }
 .mailbox-tabs {
   display: flex;

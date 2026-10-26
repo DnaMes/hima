@@ -46,19 +46,13 @@ import { SHORTCUTS, shortcutFor } from "./shortcuts.js";
 import type { ShortcutAction } from "./shortcuts.js";
 import { RiskBanner, SenderDetails } from "./sender-panel.js";
 import {
-  ACCOUNT_FAVORITES_KEY,
   chooseInitialView,
-  filterAccounts,
-  filterMailboxes,
   isSentMailbox,
   pinnedMailboxes,
   chooseMailbox as chooseInitialMailbox,
   LAST_VIEW_KEY,
-  mailboxFavoriteKey,
-  MAILBOX_FAVORITES_KEY,
   MISSING_ADDRESS_LABEL,
 } from "./preferences.js";
-import type { FavoriteFilter } from "./preferences.js";
 import {
   chooseInitialAccount,
   filterSelectableAccounts,
@@ -162,19 +156,6 @@ function sessionToken(): string | null {
   return token;
 }
 
-function savedSet(key: string): Set<string> {
-  try {
-    const values = JSON.parse(localStorage.getItem(key) ?? "[]") as unknown;
-    return new Set(Array.isArray(values) ? values.filter((value): value is string => typeof value === "string") : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function saveSet(key: string, values: Set<string>): void {
-  localStorage.setItem(key, JSON.stringify([...values]));
-}
-
 function withSeen(envelope: Envelope, seen: boolean): Envelope {
   return {
     ...envelope,
@@ -232,16 +213,10 @@ function App(): JSX.Element {
   const [accountPreferences, setAccountPreferences] = useState<AccountPreferences>(() => (
     preferenceStorage ? readAccountPreferences(preferenceStorage) : {}
   ));
-  const [accountFavorites, setAccountFavorites] = useState<Set<string>>(() => savedSet(ACCOUNT_FAVORITES_KEY));
-  const [mailboxFavorites, setMailboxFavorites] = useState<Set<string>>(() => savedSet(MAILBOX_FAVORITES_KEY));
-  const [accountFilter, setAccountFilter] = useState("");
-  const [accountFilterMode, setAccountFilterMode] = useState<FavoriteFilter>("all");
   const [theme, setTheme] = useState<ThemeName>(initialTheme);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [unifiedSelected, setUnifiedSelected] = useState(false);
   const [mailboxesByAccount, setMailboxesByAccount] = useState<MailboxesByAccount>({});
-  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(() => new Set());
-  const [mailboxFilterMode, setMailboxFilterMode] = useState<FavoriteFilter>("all");
   const [selectedMailbox, setSelectedMailbox] = useState<string | null>(null);
   const [rawEnvelopes, setEnvelopes] = useState<Envelope[]>([]);
   const [snoozed, setSnoozed] = useState<SnoozedMessage[]>([]);
@@ -329,7 +304,6 @@ function App(): JSX.Element {
   // survive the composer closing, matching the server-side outbox.
   const sendFlow = useSendFlow(token ?? "");
   const mailboxRequests = useRef(new Map<string, number>());
-  const draggedAccount = useRef<string | null>(null);
   const detailRequest = useRef(0);
   const aiRequest = useRef(0);
   const messageRequest = useRef(0);
@@ -510,12 +484,11 @@ function App(): JSX.Element {
 
   useEffect(() => {
     if (!selectedAccount || unifiedSelected) return;
-    const visible = filterMailboxes(selectedAccount, mailboxes, mailboxFilterMode, mailboxFavorites);
-    if (selectedMailbox && visible.some((mailbox) => mailbox.id === selectedMailbox)) return;
+    if (selectedMailbox && mailboxes.some((mailbox) => mailbox.id === selectedMailbox)) return;
 
     const savedMailbox = localStorage.getItem(`${LAST_MAILBOX_KEY}:${selectedAccount}`)
       ?? localStorage.getItem(LAST_MAILBOX_KEY);
-    const initial = chooseInitialMailbox(mailboxes, savedMailbox, mailboxFilterMode, mailboxFavorites, selectedAccount);
+    const initial = chooseInitialMailbox(mailboxes, savedMailbox);
     clearMailboxSelection();
     setSelectedMailbox(initial);
     setPage(1);
@@ -524,7 +497,7 @@ function App(): JSX.Element {
       setDetail(null);
       setSelectedMessage(null);
     }
-  }, [mailboxFavorites, mailboxFilterMode, mailboxes, selectedAccount, selectedMailbox, unifiedSelected]);
+  }, [mailboxes, selectedAccount, selectedMailbox, unifiedSelected]);
 
   useEffect(() => {
     const requestId = ++messageRequest.current;
@@ -663,7 +636,6 @@ function App(): JSX.Element {
     else setShortcutsOpen(true);
   };
 
-  const visibleAccounts = filterAccounts(selectableAccounts, accountFilter, accountFilterMode, accountFavorites, accountOrder);
   const currentMailbox = mailboxes.find((mailbox) => mailbox.id === selectedMailbox);
   const currentAccount = accounts.find((account) => account.name === selectedAccount);
   const readerMailboxes = selectedMessage ? mailboxState(selectedMessage.account).mailboxes : [];
@@ -722,28 +694,6 @@ function App(): JSX.Element {
           error: reason instanceof Error ? reason.message : "Ordner konnten nicht geladen werden.",
         } }));
       });
-  }
-
-  function expandAccount(name: string): void {
-    if (expandedAccounts.has(name)) return;
-    setExpandedAccounts((current) => new Set(current).add(name));
-    loadMailboxes(name);
-  }
-
-  function toggleExpandedAccount(name: string): void {
-    if (!expandedAccounts.has(name)) {
-      expandAccount(name);
-      return;
-    }
-    invalidateMailboxRequest(name);
-    setExpandedAccounts((current) => {
-      const next = new Set(current);
-      next.delete(name);
-      return next;
-    });
-    if (mailboxState(name).status === "loading") {
-      setMailboxesByAccount((current) => ({ ...current, [name]: { status: "idle", mailboxes: [] } }));
-    }
   }
 
   function clearReaderSelection(): void {
@@ -809,17 +759,6 @@ function App(): JSX.Element {
     localStorage.setItem(LAST_VIEW_KEY, "account");
   }
 
-  function toggleAccountFavorite(name: string): void {
-    const next = new Set(accountFavorites);
-    if (next.has(name)) next.delete(name); else next.add(name);
-    setAccountFavorites(next);
-    saveSet(ACCOUNT_FAVORITES_KEY, next);
-    if (accountFilterMode === "favorites" && selectedAccount === name && !next.has(name)) {
-      clearMailboxSelection();
-      setSelectedAccount(filterAccounts(selectableAccounts, accountFilter, accountFilterMode, next, accountOrder)[0]?.name ?? null);
-    }
-  }
-
   function updateAccountState(name: string, patch: AccountPreferencePatch): void {
     const next = updateAccountPreference(accountPreferences, name, patch);
     setAccountPreferences(next);
@@ -836,35 +775,6 @@ function App(): JSX.Element {
     } else {
       moved = moveAccount(moved, name, destination);
     }
-    applyAccountOrder(name, moved);
-  }
-
-  function reorderVisibleAccount(
-    name: string,
-    destination: "up" | "down" | { dropOn: string },
-  ): void {
-    const favorite = accountFavorites.has(name);
-    const groupOrder = visibleAccounts
-      .filter((account) => accountFavorites.has(account.name) === favorite)
-      .map((account) => account.name);
-    const from = groupOrder.indexOf(name);
-    const to = typeof destination === "object"
-      ? groupOrder.indexOf(destination.dropOn)
-      : from + (destination === "up" ? -1 : 1);
-    if (from < 0 || to < 0 || to >= groupOrder.length || from === to) return;
-
-    const [movedName] = groupOrder.splice(from, 1);
-    groupOrder.splice(to, 0, movedName!);
-    const groupNames = new Set(groupOrder);
-    const canonicalSlots = accountOrder.flatMap((accountName, index) => (
-      groupNames.has(accountName) ? [index] : []
-    ));
-    if (canonicalSlots.length !== groupOrder.length) return;
-
-    const moved = [...accountOrder];
-    groupOrder.forEach((accountName, index) => {
-      moved[canonicalSlots[index]!] = accountName;
-    });
     applyAccountOrder(name, moved);
   }
 
@@ -887,14 +797,6 @@ function App(): JSX.Element {
     setAccountMoveNotice((previous) => ({ name, sequence: (previous?.sequence ?? 0) + 1 }));
   }
 
-  function toggleMailboxFavorite(account: string, id: string): void {
-    const key = mailboxFavoriteKey(account, id);
-    const next = new Set(mailboxFavorites);
-    if (next.has(key)) next.delete(key); else next.add(key);
-    setMailboxFavorites(next);
-    saveSet(MAILBOX_FAVORITES_KEY, next);
-  }
-
   function selectTheme(value: string): void {
     const next = resolveTheme(value);
     setTheme(next);
@@ -906,6 +808,32 @@ function App(): JSX.Element {
     setSearchFilters((current) => clearFilter(current, key));
     setActiveSearch((current) => ({ ...current, filters: clearFilter(current.filters, key) }));
     setPage(1);
+  }
+
+  function handleTabKeyDown(event: React.KeyboardEvent<HTMLElement>): void {
+    const target = (event.target as HTMLElement).closest<HTMLButtonElement>('[role="tab"]');
+    if (!target) return;
+    const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const index = tabs.indexOf(target);
+    if (index < 0) return;
+
+    let nextIndex = -1;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      nextIndex = (index + 1) % tabs.length;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      nextIndex = (index - 1 + tabs.length) % tabs.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = tabs.length - 1;
+    }
+
+    if (nextIndex >= 0) {
+      event.preventDefault();
+      const nextTab = tabs[nextIndex];
+      nextTab?.focus();
+      nextTab?.click();
+    }
   }
 
   function runSearch(event: FormEvent<HTMLFormElement>): void {
@@ -1603,7 +1531,7 @@ function App(): JSX.Element {
       {notice && <div className="banner notice-banner" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Hinweis schließen"><IconClose size={14} /><span className="visually-hidden">×</span></button></div>}
       <div className="mailbox-bar">
         <div className="tabs-navigation">
-          <nav className="account-tabs" role="tablist" aria-label="Konten-Tabs">
+          <nav className="account-tabs" role="tablist" aria-label="Konten-Tabs" onKeyDown={handleTabKeyDown}>
             {(() => {
               const unifiedTotalUnread = selectableAccounts.reduce((acc, account) => {
                 const state = mailboxState(account.name);
@@ -1616,6 +1544,8 @@ function App(): JSX.Element {
                   type="button"
                   onClick={chooseUnifiedInbox}
                   aria-selected={unifiedSelected}
+                  aria-controls="workspace-panel"
+                  tabIndex={unifiedSelected ? 0 : -1}
                   aria-current={unifiedSelected ? "page" : undefined}
                 >
                   <IconInbox size={13} />
@@ -1639,51 +1569,78 @@ function App(): JSX.Element {
                   type="button"
                   onClick={() => chooseAccount(account.name)}
                   aria-selected={isCurrent}
+                  aria-controls="workspace-panel"
+                  tabIndex={isCurrent ? 0 : -1}
                   aria-current={isCurrent ? "page" : undefined}
                 >
                   <ProviderLogo provider={account.provider} size={14} />
                   <span>{account.name}</span>
                   {totalUnread > 0 && <span className="tab-unread-pill">{totalUnread}</span>}
-                  {unifiedWarnings.some((warning) => warning.account === account.name) && <span className="account-warning" role="img" aria-label="Warnung beim letzten Laden" title="Warnung beim letzten Laden">⚠</span>}
+                  {unifiedWarnings.some((warning) => warning.account === account.name) && (
+                    <span className="account-warning" aria-hidden="true" title="Warnung beim letzten Laden">⚠</span>
+                  )}
                 </button>
               );
             })}
-            {!loadingAccounts && accounts.length > 0 && selectableAccounts.length === 0 && <div className="empty-state"><strong>Keine aktiven Konten sichtbar</strong><span>Aktiviere oder zeige mindestens ein Konto in der Verwaltung.</span><button className="subtle-button" type="button" onClick={() => setAccountManagerOpen(true)}>Konten verwalten</button></div>}
           </nav>
-          <nav className="mailbox-tabs" role="tablist" aria-label="Ordner-Tabs">
-            {unifiedSelected ? (
-              <button role="tab" className="mailbox-tab active" type="button" aria-selected="true" aria-current="page">
-                <IconInbox size={13} />
-                <span>Alle Eingänge</span>
-              </button>
-            ) : currentAccount ? (
-              barMailboxes.map((mb) => {
-                const isCurrent = selectedMailbox === mb.id;
-                return (
-                  <button
-                    key={mb.id}
-                    data-mailbox={mb.id}
-                    role="tab"
-                    className={`mailbox-tab ${isCurrent ? "active" : ""}`}
-                    type="button"
-                    onClick={() => chooseMailbox(currentAccount.name, mb.id)}
-                    aria-selected={isCurrent}
-                    aria-current={isCurrent ? "page" : undefined}
-                  >
-                    <IconFolder size={13} />
-                    <span>{mb.name}</span>
-                    {mb.unread !== null && mb.unread > 0 && <span className="tab-unread-pill">{mb.unread}</span>}
-                  </button>
-                );
-              })
-            ) : null}
+          {!loadingAccounts && accounts.length > 0 && selectableAccounts.length === 0 && (
+            <div className="empty-state">
+              <strong>Keine aktiven Konten sichtbar</strong>
+              <span>Aktiviere oder zeige mindestens ein Konto in der Verwaltung.</span>
+              <button className="subtle-button" type="button" onClick={() => setAccountManagerOpen(true)}>Konten verwalten</button>
+            </div>
+          )}
+          <div className="mailbox-tabs-bar">
+            <nav className="mailbox-tabs" role="tablist" aria-label="Ordner-Tabs" onKeyDown={handleTabKeyDown}>
+              {unifiedSelected ? (
+                <button
+                  role="tab"
+                  className="mailbox-tab active"
+                  type="button"
+                  aria-selected="true"
+                  aria-controls="messages-panel"
+                  tabIndex={0}
+                  aria-current="page"
+                >
+                  <IconInbox size={13} />
+                  <span>Alle Eingänge</span>
+                </button>
+              ) : currentAccount ? (
+                barMailboxes.map((mb) => {
+                  const isCurrent = selectedMailbox === mb.id;
+                  return (
+                    <button
+                      key={mb.id}
+                      data-mailbox={mb.id}
+                      role="tab"
+                      className={`mailbox-tab ${isCurrent ? "active" : ""}`}
+                      type="button"
+                      onClick={() => chooseMailbox(currentAccount.name, mb.id)}
+                      aria-selected={isCurrent}
+                      aria-controls="messages-panel"
+                      tabIndex={isCurrent ? 0 : -1}
+                      aria-current={isCurrent ? "page" : undefined}
+                    >
+                      <IconFolder size={13} />
+                      <span>{mb.name}</span>
+                      {mb.unread !== null && mb.unread > 0 && <span className="tab-unread-pill">{mb.unread}</span>}
+                    </button>
+                  );
+                })
+              ) : null}
+            </nav>
             {currentAccount && barState?.status === "loading" && <p className="mailbox-status" role="status">Ordner werden geladen …</p>}
-            {currentAccount && barState?.status === "error" && <div className="mailbox-status"><p role="alert">{barState.error}</p><button className="subtle-button" type="button" aria-label={`Ordner erneut laden: ${currentAccount.name}`} onClick={() => loadMailboxes(currentAccount.name)}>Erneut laden</button></div>}
-          </nav>
+            {currentAccount && barState?.status === "error" && (
+              <div className="mailbox-status">
+                <p role="alert">{barState.error}</p>
+                <button className="subtle-button" type="button" aria-label={`Ordner erneut laden: ${currentAccount.name}`} onClick={() => loadMailboxes(currentAccount.name)}>Erneut laden</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      <section className="workspace">
-        <section className="messages-panel panel">
+      <section id="workspace-panel" className="workspace" role="tabpanel" aria-label="Arbeitsbereich">
+        <section id="messages-panel" className="messages-panel panel" role="tabpanel" aria-label="Nachrichten">
           <div className="panel-heading">
             <div>
               {unifiedSelected || multiSource || !currentAccount
