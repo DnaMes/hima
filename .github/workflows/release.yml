@@ -63,8 +63,8 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           version="${RELEASE_TAG#v}"
-          awk -v v="## [$version]" -v v2="## $version" '
-            index($0, v) == 1 || index($0, v2) == 1 {found=1; next}
+          awk -v v="## [$version]" -v v2="## $version " -v v3="## $version" '
+            index($0, v) == 1 || index($0, v2) == 1 || $0 == v3 {found=1; next}
             found && /^## / {exit}
             found
           ' CHANGELOG.md > dist-release/RELEASE_NOTES.md
