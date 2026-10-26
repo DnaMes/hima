@@ -1,0 +1,21 @@
+[Unit]
+Description=Himalaya Web mail GUI (loopback)
+After=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/tools/himalaya-web
+Environment=NODE_ENV=production
+Environment=HIMALAYA_WEB_PORT=47831
+Environment=PATH=%h/.local/share/mise/shims:/usr/local/bin:/usr/bin
+EnvironmentFile=-%h/.config/himalaya-web/ai.env
+ExecStartPre=/usr/bin/test -f %h/projects/tools/himalaya-web/dist/index.html
+# node-global resolves the global mise node at start, so a node bump or prune cannot break this unit.
+ExecStart=%h/bin/node-global %h/projects/tools/himalaya-web/node_modules/tsx/dist/cli.mjs src/server/index.ts
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=graphical-session.target

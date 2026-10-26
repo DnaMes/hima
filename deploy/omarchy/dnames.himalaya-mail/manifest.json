@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "dnames.himalaya-mail",
+  "name": "Himalaya Mail",
+  "version": "1.1.0",
+  "description": "Opens the local Himalaya Web mail client.",
+  "kinds": ["bar-widget"],
+  "entryPoints": {
+    "barWidget": "Widget.qml"
+  },
+  "barWidget": {
+    "displayName": "Himalaya Mail",
+    "description": "Open the local Himalaya Web mail client in the browser.",
+    "category": "Communication",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
