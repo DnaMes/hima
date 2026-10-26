@@ -2,6 +2,18 @@
 
 All notable changes to the standalone Himalaya Web GUI are documented here.
 
+## 0.35.0 — 2026-10-26
+
+- Hima Rebranding & Open Source Release:
+  - Rebranded application identity to **Hima** ("Your local mail workspace, powered by Himalaya").
+  - Published public repository at `https://github.com/DnaMes/hima` with MIT License and GitHub Actions CI.
+  - Set up portfolio repository at `~/projects/business/erdlabs/apps/hima`.
+- Security & Robustness Hardening:
+  - Fixed URL-encoded authentication bypass in `src/server/app.ts` with strict `decodeURIComponent` path normalization and loopback host enforcement.
+  - Enforced strict draft storage namespacing in `src/client/compose-draft.ts` by account, mailbox, and message ID to eliminate cross-account draft collisions.
+  - Streamed compose message bodies through child process `stdin` directly into `himalaya` CLI, eliminating argv leaks and `E2BIG` buffer caps on large messages.
+  - Handled `stdin` `EPIPE` errors gracefully on early process termination.
+
 ## 0.34.0 — 2026-10-26
 
 - Balanced Spacing & Spacious Middle Frame:

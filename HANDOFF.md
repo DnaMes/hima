@@ -11,9 +11,12 @@ automated tests.
 
 ## Quick state (read this first)
 
-- Shipped and live: **0.34.0** (spacious middle message frame with `clamp(520px, 34vw, 640px)`, 2-line Superhuman/Apple Mail style message rows, calm 130ms surface transitions, 240px sidebar, and harmonious grid proportions). Earlier: 0.33.0 (horizontal account & mailbox tabs, collapsible search freeing 120px+ vertical space, ultra-slim 38px precision header, focused reader pane with up to 1080px body width, 52px compact sidebar rail), 0.32.0 (ultra-slim 42px header), 0.31.0 (collapsible tabs, reader reorder), 0.30.0 (provider vector logos), 0.28.7 (threading).
-- Health: typecheck/build clean; unit 766/766; Playwright 133/133; `npm audit --omit=dev` 0 vulnerabilities. Live service: `systemctl --user status himalaya-web.service`.
-- Real-UI verification (2026-10-26, live service): verified generous 520–720px middle frame width, 2-line unclipped message items, calm hover states, solid active states, and balanced reader view.
+- Shipped and live: **0.35.0** — **Hima** ("Your local mail workspace, powered by Himalaya"). Public open source release live at `https://github.com/DnaMes/hima`, portfolio repository set up at `~/projects/business/erdlabs/apps/hima`. Includes URL-encoded auth bypass fix, draft isolation namespacing, stdin streaming for compose, authentic vector logos, horizontal tabs, Superhuman 2-line cards, and focused reading pane. Earlier: 0.34.0 (spacious middle message frame with `clamp(520px, 34vw, 640px)`), 0.33.0 (horizontal tabs, collapsible search), 0.32.0 (ultra-slim 42px header), 0.30.0 (vector logos), 0.28.7 (threading).
+- Health: typecheck/build clean; unit 770/770 passing across 57 test files; Playwright 133/133 passing; `npm audit --omit=dev` 0 vulnerabilities. Live service: `systemctl --user status himalaya-web.service` active and healthy at `http://127.0.0.1:47831/`.
+- Repositories:
+  - Working service tree: `~/projects/tools/himalaya-web` (git origin: `ssh://git@100.119.46.15:2222/erdna/himalaya-web.git`)
+  - Public open source tree: `~/projects/business/erdlabs/apps/hima` (git origin: `git@github-personal:DnaMes/hima.git`)
+- Real-UI verification (2026-10-26, live service): verified generous middle frame width, clean 2-line unclipped message items, authentic brand logos, single stars, calm hover states, and focused reader view.
 
 ## Current Progress
 - **Version 0.30.0 (2026-10-26, authentic provider logos & full modern UI/UX overhaul) implemented and verified.**
