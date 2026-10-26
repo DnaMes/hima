@@ -66,7 +66,7 @@ test("saves a search, keeps it across a reload and applies it with its scope and
   await page.reload();
   await expect(picker(page)).toBeVisible();
   // Accounts arriving after the pick would re-run the search once more; wait until they are in.
-  await expect(page.locator(".count-pill").first()).toHaveText(/[1-9]/);
+  await expect(page.locator(".account-tab[data-account]").first()).toBeVisible();
   await picker(page).selectOption({ label: "Rechnungen" });
 
   await expect.poll(() => recorded.searchBodies.length).toBe(2);

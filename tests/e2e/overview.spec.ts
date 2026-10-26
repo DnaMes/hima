@@ -160,12 +160,12 @@ test("still renders when the two new storage keys are blocked", async ({ page })
 
 test("shows the source chip, the account dot colour, and a warning badge in the unified inbox", async ({ page }) => {
   await setup(page, { colors: { manual: { alpha: 2, beta: 4 }, auto: { broken: 6 } } });
-  await page.getByRole("button", { name: "Alle Eingänge", exact: true }).click();
+  await page.locator(".account-tab").first().click();
 
   await expect(page.getByText("alpha · INBOX", { exact: true })).toBeVisible();
   await expect(page.getByText("beta · Inbox", { exact: true })).toBeVisible();
   await expect(row(page, /Synthetic unified alpha/).locator(".account-dot")).toHaveCSS("background-color", AMBER);
   await expect(row(page, /Synthetic unified beta/).locator(".account-dot")).toHaveCSS("background-color", SKY);
-  await expect(page.locator('section[aria-label="broken"]').getByRole("img", { name: "Warnung beim letzten Laden" })).toBeVisible();
-  await expect(page.locator('section[aria-label="alpha"]').getByRole("img", { name: "Warnung beim letzten Laden" })).toHaveCount(0);
+  await expect(page.locator('[data-account="broken"]').getByRole("img", { name: "Warnung beim letzten Laden" })).toBeVisible();
+  await expect(page.locator('[data-account="alpha"]').getByRole("img", { name: "Warnung beim letzten Laden" })).toHaveCount(0);
 });

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("collapses the sidebar into icon tabs, displays horizontal account and folder tabs, supports collapsible search, and persists across reload", async ({ page }) => {
+test("shows the persistent account and folder bar instead of a sidebar, names the open mailbox, and supports collapsible search", async ({ page }) => {
   await page.route("**/api/bootstrap", (route) => route.fulfill({ json: {
     accounts: [
       { name: "synthetic", default: true, backends: ["imap", "smtp"], email: "synthetic@example.test" },
@@ -35,11 +35,11 @@ test("collapses the sidebar into icon tabs, displays horizontal account and fold
   await page.addInitScript(() => localStorage.setItem("himalaya-web-last-view", "account"));
   await page.goto("/");
 
-  // Starts in default expanded mode without mailbox tabs
-  await expect(page.locator(".workspace")).not.toHaveClass(/sidebar-collapsed/);
-  await expect(page.locator(".accounts-panel")).not.toHaveClass(/collapsed/);
-  await expect(page.locator(".mailbox-tabs")).toHaveCount(0);
+  // The bar is always there; there is no sidebar any more
+  await expect(page.locator(".accounts-panel")).toHaveCount(0);
+  await expect(page.locator(".mailbox-bar .account-tabs")).toBeVisible();
   await expect(page.getByLabel("Nachrichten suchen")).toBeVisible();
+  await expect(page.locator(".account-identity")).toContainText("synthetic@example.test");
 
   // Collapsible search test: toggle search off
   const searchToggleBtn = page.getByRole("button", { name: "Suche einklappen" });
@@ -55,52 +55,19 @@ test("collapses the sidebar into icon tabs, displays horizontal account and fold
   await searchExpandBtn.click();
   await expect(page.getByLabel("Nachrichten suchen")).toBeVisible();
 
-  // Click collapse button
-  const toggleBtn = page.getByRole("button", { name: "Postfächer einklappen" });
-  await expect(toggleBtn).toBeVisible();
-  await toggleBtn.click();
-
-  // Sidebar is now collapsed
-  await expect(page.locator(".workspace")).toHaveClass(/sidebar-collapsed/);
-  await expect(page.locator(".accounts-panel")).toHaveClass(/collapsed/);
-  await expect(page.getByRole("button", { name: "Postfächer ausklappen" })).toBeVisible();
-
-  // Horizontal account and folder tabs appear
-  await expect(page.locator(".account-tabs")).toBeVisible();
-  await expect(page.locator(".mailbox-tabs")).toBeVisible();
+  // Account and folder tabs
+  await expect(page.locator(".mailbox-bar .mailbox-tabs")).toBeVisible();
   await expect(page.getByRole("tab", { name: "INBOX" })).toBeVisible();
-  const sentTab = page.getByRole("tab", { name: "Sent" });
-  await expect(sentTab).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Sent" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Drafts" })).toBeVisible();
 
-  // Switching account via horizontal account tabs
+  // Switching account swaps the folder tabs and the address in the list header
   const workTab = page.getByRole("tab", { name: /work/i });
-  await expect(workTab).toBeVisible();
   await workTab.click();
   await expect(page.getByRole("tab", { name: "Archive" })).toBeVisible();
+  await expect(page.locator(".account-identity")).toContainText("work@example.test");
 
-  // Persistence check: reload preserves collapsed state
+  // The bar survives a reload
   await page.reload();
-  await expect(page.locator(".workspace")).toHaveClass(/sidebar-collapsed/);
-  await expect(page.locator(".accounts-panel")).toHaveClass(/collapsed/);
-  await expect(page.locator(".mailbox-tabs")).toBeVisible();
-
-  // Click expand toggle to restore full view
-  await page.getByRole("button", { name: "Postfächer ausklappen" }).click();
-  await expect(page.locator(".workspace")).not.toHaveClass(/sidebar-collapsed/);
-  await expect(page.locator(".accounts-panel")).not.toHaveClass(/collapsed/);
-  await expect(page.locator(".mailbox-tabs")).toHaveCount(0);
-
-  // Topbar layout toggle test: click 'Tabs-Modus' button in topbar
-  const topbarTabsBtn = page.getByRole("button", { name: "In Tabs-Modus wechseln" });
-  await expect(topbarTabsBtn).toBeVisible();
-  await topbarTabsBtn.click();
-  await expect(page.locator(".workspace")).toHaveClass(/sidebar-collapsed/);
-  await expect(page.locator(".account-tabs")).toBeVisible();
-
-  // Click 'Seitenleiste' button in topbar to return to full sidebar view
-  const topbarSidebarBtn = page.getByRole("button", { name: "Seitenleiste anzeigen" });
-  await expect(topbarSidebarBtn).toBeVisible();
-  await topbarSidebarBtn.click();
-  await expect(page.locator(".workspace")).not.toHaveClass(/sidebar-collapsed/);
+  await expect(page.locator(".mailbox-bar .mailbox-tabs")).toBeVisible();
 });

@@ -117,22 +117,21 @@ test("combines the lazy account tree, persisted order, and source-aware unified 
   await page.addInitScript(() => localStorage.setItem("himalaya-web-last-view", "account"));
   await page.goto("/");
 
-  const accountNames = page.locator(".account-list .account-copy strong");
-  const alpha = page.getByRole("region", { name: "alpha", exact: true });
-  const beta = page.getByRole("region", { name: "beta", exact: true });
+  const accountNames = page.locator(".account-tab[data-account] > span:not(.tab-unread-pill)");
+  const alpha = page.locator('[data-account="alpha"]');
+  const beta = page.locator('[data-account="beta"]');
 
-  await expect(page.getByRole("button", { name: "Alle Eingänge", exact: true })).toBeVisible();
+  await expect(page.locator(".account-tab").first()).toBeVisible();
   await expect(accountNames).toHaveText(["alpha", "beta"]);
-  await expect(alpha.locator(".account-select")).toHaveAttribute("aria-current", "page");
-  await expect(alpha.getByRole("button", { name: /Ordner ausklappen: alpha/ })).toHaveAttribute("aria-expanded", "false");
+  await expect(alpha).toHaveAttribute("aria-current", "page");
   expect(calls.filter((call) => call.path === "/api/accounts/alpha/mailboxes")).toHaveLength(1);
   expect(calls.filter((call) => call.path === "/api/accounts/beta/mailboxes")).toHaveLength(0);
 
-  await beta.getByRole("button", { name: /Ordner ausklappen: beta/ }).click();
-  await expect(beta.getByRole("button", { name: "Ordner auswählen: Inbox (beta)", exact: true })).toBeVisible();
-  expect(calls.filter((call) => call.path === "/api/accounts/beta/mailboxes")).toHaveLength(1);
+  await expect(page.locator(".mailbox-tab").filter({ hasText: "INBOX" })).toBeVisible();
 
-  await beta.getByRole("button", { name: "Nach oben verschieben: beta", exact: true }).click();
+  await page.getByRole("button", { name: "Konten verwalten", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Nach oben verschieben: beta", exact: true }).click();
+  await page.getByRole("button", { name: "Kontenverwaltung schließen" }).click();
   await expect(accountNames).toHaveText(["beta", "alpha"]);
   expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), ORDER_KEY))
     .toEqual(["beta", "alpha", "hidden", "inactive"]);
@@ -140,7 +139,7 @@ test("combines the lazy account tree, persisted order, and source-aware unified 
   await page.reload();
   await expect(accountNames).toHaveText(["beta", "alpha"]);
 
-  await page.getByRole("button", { name: "Alle Eingänge", exact: true }).click();
+  await page.locator(".account-tab").first().click();
   await expect(page.getByRole("button", { name: /Beta unified message/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Alpha unified message/ })).toBeVisible();
   await expect(page.getByText("beta · Inbox", { exact: true })).toBeVisible();

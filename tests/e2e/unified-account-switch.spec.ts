@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-const unifiedButton = (page: Page) => page.getByRole("button", { name: "Alle Eingänge", exact: true });
+const unifiedButton = (page: Page) => page.locator(".account-tab").first();
 const managerRow = (page: Page, account: string) =>
   page.locator(".account-manager-row").filter({ has: page.locator("strong", { hasText: new RegExp(`^${account}$`) }) });
 
@@ -40,7 +40,7 @@ test("a per-account switch removes it from the unified inbox but not from the tr
 
   await expect.poll(() => requests.at(-1)).toEqual(["alpha"]);
   await expect(unifiedButton(page)).toContainText("1 Konto");
-  await expect(page.getByRole("region", { name: "beta", exact: true })).toBeVisible();
+  await expect(page.locator('[data-account="beta"]')).toBeVisible();
 });
 
 test("with no account selected the unified inbox says so, links to the manager, and the choice survives a reload", async ({ page }) => {

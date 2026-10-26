@@ -122,11 +122,7 @@ import {
   IconCopy,
   IconEye,
   IconEyeOff,
-  IconArrowUp,
-  IconArrowDown,
   IconMail,
-  IconSidebar,
-  IconTabs,
 } from "./icons.js";
 import { ProviderLogo, providerLabel } from "./provider-logos.js";
 import "./styles.css";
@@ -134,7 +130,6 @@ import "./styles.css";
 const PAGE_SIZE = 50;
 const LAST_ACCOUNT_KEY = "himalaya-web-last-account";
 const LAST_MAILBOX_KEY = "himalaya-web-last-mailbox";
-const SIDEBAR_COLLAPSED_KEY = "himalaya-web-sidebar-collapsed";
 const SEARCH_EXPANDED_KEY = "himalaya-web-search-expanded";
 
 function browserStorage(): Storage | null {
@@ -306,24 +301,6 @@ function App(): JSX.Element {
   const [density, setDensity] = useState<ListDensity>(() => (
     preferenceStorage ? readListDensity(preferenceStorage) : "compact"
   ));
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
-      } catch {}
-      return next;
-    });
-  };
-
   const [searchExpanded, setSearchExpanded] = useState<boolean>(() => {
     try {
       return localStorage.getItem(SEARCH_EXPANDED_KEY) !== "false";
@@ -1561,6 +1538,9 @@ function App(): JSX.Element {
     }
   }
 
+  const barState = currentAccount && !unifiedSelected ? mailboxState(currentAccount.name) : null;
+  const barPinned = barState ? pinnedMailboxes(barState.mailboxes) : [];
+  const barMailboxes = barState ? [...barPinned, ...barState.mailboxes.filter((mb) => !barPinned.some((pin) => pin.id === mb.id))] : [];
   const readerLabels = detail ? labelsByKey.get(snoozeKey(detail.ref)) ?? [] : [];
   const remoteImages = countRemoteImages(detail?.html ?? null);
   const imageSender = detail?.envelope.from[0]?.email.toLowerCase() ?? "";
@@ -1591,15 +1571,13 @@ function App(): JSX.Element {
             </select>
           </label>
           <div className="topbar-meta">
-            <button
-              className={`subtle-button topbar-btn layout-toggle-btn ${sidebarCollapsed ? "active" : ""}`}
-              type="button"
-              onClick={toggleSidebar}
-              aria-label={sidebarCollapsed ? "Seitenleiste anzeigen" : "In Tabs-Modus wechseln"}
-              title={sidebarCollapsed ? "Seitenleiste anzeigen" : "In Tabs-Modus wechseln"}
-            >
-              {sidebarCollapsed ? <IconSidebar size={13} /> : <IconTabs size={13} />}
-              <span>{sidebarCollapsed ? "Seitenleiste" : "Tabs-Modus"}</span>
+            <button className="primary-button topbar-btn compose-button" type="button" aria-label="Neue Nachricht" disabled={selectableAccounts.length === 0 || sendFlow.state.phase === "counting"} onClick={() => setComposerSeed({ mode: "new", account: selectedAccount ?? selectableAccounts[0]?.name ?? "" })}>
+              <IconCompose size={13} />
+              <span>Neue Nachricht</span>
+            </button>
+            <button ref={accountManagerButton} className="subtle-button topbar-btn manager-button" type="button" onClick={() => setAccountManagerOpen(true)} aria-haspopup="dialog" aria-expanded={accountManagerOpen} aria-label="Konten verwalten">
+              <IconSettings size={13} />
+              <span>Konten</span>
             </button>
             <button className="subtle-button topbar-btn" type="button" aria-haspopup="dialog" onClick={() => setRulesOpen(true)}>
               <IconRules size={13} />
@@ -1623,139 +1601,94 @@ function App(): JSX.Element {
       {addressWarning && <div className="banner warning-banner" role="status"><span>{addressWarning}</span></div>}
       {error && <div className="banner error-banner" role="alert"><span>{error}</span><button onClick={() => setError(null)} aria-label="Fehler schließen"><IconClose size={14} /><span className="visually-hidden">×</span></button></div>}
       {notice && <div className="banner notice-banner" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Hinweis schließen"><IconClose size={14} /><span className="visually-hidden">×</span></button></div>}
-      <section className={`workspace ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
-        <aside className={`accounts-panel panel ${sidebarCollapsed ? "collapsed" : ""}`}>
-          <div className="panel-heading">
-            <div><span className="eyebrow">KONTEN</span><h2>Postfächer</h2></div>
-            <div className="panel-heading-actions">
-              <span className="count-pill">{selectableAccounts.length}</span>
-              <button
-                className="icon-button sidebar-toggle-button"
-                type="button"
-                onClick={toggleSidebar}
-                aria-label={sidebarCollapsed ? "Postfächer ausklappen" : "Postfächer einklappen"}
-                title={sidebarCollapsed ? "Postfächer ausklappen" : "Postfächer einklappen"}
-              >
-                <IconSidebar size={18} />
-              </button>
-              <button className="primary-button compose-button" type="button" aria-label="Neue Nachricht" disabled={selectableAccounts.length === 0 || sendFlow.state.phase === "counting"} onClick={() => setComposerSeed({ mode: "new", account: selectedAccount ?? selectableAccounts[0]?.name ?? "" })}>
-                <IconCompose size={15} />
-                <span>Neue Nachricht</span>
-              </button>
-              <button ref={accountManagerButton} className="icon-button manager-button" type="button" onClick={() => setAccountManagerOpen(true)} aria-haspopup="dialog" aria-expanded={accountManagerOpen} aria-label="Konten verwalten">
-                <IconSettings size={18} />
-                <span className="visually-hidden">⚙︎</span>
-              </button>
-            </div>
-          </div>
-          <div className="filter-tabs" role="group" aria-label="Konten anzeigen"><button className={accountFilterMode === "all" ? "selected" : ""} onClick={() => setAccountFilterMode("all")}>Alle</button><button className={accountFilterMode === "favorites" ? "selected" : ""} onClick={() => setAccountFilterMode("favorites")}>Favoriten</button></div>
-          <label className="search-input compact"><span aria-hidden="true"><IconSearch size={14} /></span><input value={accountFilter} onChange={(event) => setAccountFilter(event.target.value)} placeholder="Konto filtern" aria-label="Konten filtern" /></label>
-          <div className="filter-tabs mailbox-filter" role="group" aria-label="Ordner anzeigen">
-            <button className={mailboxFilterMode === "all" ? "selected" : ""} aria-pressed={mailboxFilterMode === "all"} onClick={() => setMailboxFilterMode("all")}>Ordner: Alle</button>
-            <button className={mailboxFilterMode === "favorites" ? "selected" : ""} aria-pressed={mailboxFilterMode === "favorites"} onClick={() => setMailboxFilterMode("favorites")}>Ordner: Favoriten</button>
-          </div>
-          <p className="tree-move-status" aria-live="polite" aria-atomic="true">{!accountManagerOpen && accountMoveNotice && <span key={accountMoveNotice.sequence}>Konto {accountMoveNotice.name} verschoben</span>}</p>
-          <nav className="account-list" aria-label="Kontenliste">
-            <button className="unified-inbox-select" type="button" aria-label="Alle Eingänge" aria-current={unifiedSelected ? "page" : undefined} onClick={chooseUnifiedInbox}>
-              <span className="unified-mark" aria-hidden="true"><IconInbox size={18} /><span className="visually-hidden">◧</span></span>
-              <span className="unified-copy" aria-hidden="true"><strong>Alle Eingänge</strong><small>{unifiedAccounts.length} {unifiedAccounts.length === 1 ? "Konto" : "Konten"}</small></span>
-            </button>
-            {loadingAccounts && <div className="empty-state">Konten werden geladen …</div>}
-            {!loadingAccounts && visibleAccounts.length === 0 && <div className="empty-state"><span className="empty-icon">☆</span><strong>{accounts.length > 0 && selectableAccounts.length === 0 ? "Keine aktiven Konten sichtbar" : accountFilterMode === "favorites" ? "Keine bevorzugten Konten" : "Keine Konten gefunden"}</strong><span>{accounts.length > 0 && selectableAccounts.length === 0 ? "Aktiviere oder zeige mindestens ein Konto in der Verwaltung." : "Ändere den Filter oder die Suche."}</span>{accounts.length > 0 && <button className="subtle-button" type="button" onClick={() => setAccountManagerOpen(true)}>Konten verwalten</button>}</div>}
-            {visibleAccounts.map((account) => {
+      <div className="mailbox-bar">
+        <div className="tabs-navigation">
+          <nav className="account-tabs" role="tablist" aria-label="Konten-Tabs">
+            {(() => {
+              const unifiedTotalUnread = selectableAccounts.reduce((acc, account) => {
+                const state = mailboxState(account.name);
+                return acc + state.mailboxes.reduce((mAcc, mb) => mAcc + (mb.unread ?? 0), 0);
+              }, 0);
+              return (
+                <button
+                  role="tab"
+                  className={`account-tab ${unifiedSelected ? "active" : ""}`}
+                  type="button"
+                  onClick={chooseUnifiedInbox}
+                  aria-selected={unifiedSelected}
+                  aria-current={unifiedSelected ? "page" : undefined}
+                >
+                  <IconInbox size={13} />
+                  <span>Alle Eingänge</span>
+                  <span className="tab-unread-pill" title={unifiedTotalUnread > 0 ? `${unifiedTotalUnread} ungelesen (${unifiedAccounts.length} Konten)` : `${unifiedAccounts.length} Konten`}>
+                    {unifiedTotalUnread > 0 ? unifiedTotalUnread : `${unifiedAccounts.length} ${unifiedAccounts.length === 1 ? "Konto" : "Konten"}`}
+                  </span>
+                </button>
+              );
+            })()}
+            {selectableAccounts.map((account) => {
+              const isCurrent = !unifiedSelected && selectedAccount === account.name;
               const state = mailboxState(account.name);
-              const expanded = expandedAccounts.has(account.name);
-              const selected = !unifiedSelected && selectedAccount === account.name;
-              const children = filterMailboxes(account.name, state.mailboxes, mailboxFilterMode, mailboxFavorites);
-              const renderedGroup = visibleAccounts.filter((candidate) => (
-                accountFavorites.has(candidate.name) === accountFavorites.has(account.name)
-              ));
-              const groupIndex = renderedGroup.findIndex((candidate) => candidate.name === account.name);
-              const pinned = pinnedMailboxes(state.mailboxes);
-              const rest = children.filter((mailbox) => !pinned.some((pin) => pin.id === mailbox.id));
-              const renderMailboxRow = (mailbox: Mailbox) => {
-                const favorite = mailboxFavorites.has(mailboxFavoriteKey(account.name, mailbox.id));
-                return <div className="mailbox-row" key={mailbox.id}>
-                  <button className="mailbox-select" type="button" aria-label={`Ordner auswählen: ${mailbox.name} (${account.name})`} aria-current={selected && selectedMailbox === mailbox.id ? "page" : undefined} onClick={() => chooseMailbox(account.name, mailbox.id)}>
-                    <span className="folder-icon" aria-hidden="true"><IconFolder size={14} /><span className="visually-hidden">▱</span></span><span className="mailbox-name">{mailbox.name}</span>
-                    {mailbox.unread !== null && mailbox.unread > 0 && <span className="unread-pill" aria-label={`${mailbox.unread} ungelesen`}>{mailbox.unread}</span>}
-                  </button>
-                  <button className={`favorite-button ${favorite ? "favorite" : ""}`} type="button" onClick={() => toggleMailboxFavorite(account.name, mailbox.id)} aria-label={`${favorite ? "Ordnerfavorit entfernen" : "Ordner als Favorit markieren"}: ${mailbox.name} (${account.name})`}>
-                    <IconStar size={14} filled={favorite} />
-                    <span className="visually-hidden">{favorite ? "★" : "☆"}</span>
-                  </button>
-                </div>;
-              };
-
-              return <section key={account.name} aria-label={account.name}>
-                <div className={`account-row ${selected ? "active" : ""}`} draggable
-                  onDragStart={(event) => {
-                    draggedAccount.current = account.name;
-                    event.dataTransfer.effectAllowed = "move";
-                    event.dataTransfer.setData("text/plain", account.name);
-                  }}
-                  onDragEnd={() => { draggedAccount.current = null; }}
-                  onDragOver={(event) => {
-                    if (!draggedAccount.current) return;
-                    event.preventDefault();
-                    event.dataTransfer.dropEffect = "move";
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const name = draggedAccount.current;
-                    draggedAccount.current = null;
-                    if (name) reorderVisibleAccount(name, { dropOn: account.name });
-                  }}>
-                  <button className="disclosure-button" type="button" aria-expanded={expanded} aria-label={`Ordner ${expanded ? "einklappen" : "ausklappen"}: ${account.name}`} onClick={() => toggleExpandedAccount(account.name)}>
-                    <span aria-hidden="true" className="disclosure-icon">
-                      {expanded ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}
-                      <span className="visually-hidden">{expanded ? "▾" : "▸"}</span>
-                    </span>
-                  </button>
-                  <button className="account-select" type="button" aria-label={`${account.name} (${account.email ?? providerLabel(account.provider)})`} title={`${account.name} (${account.email ?? providerLabel(account.provider)})`} aria-current={selected ? "page" : undefined} onClick={() => chooseAccount(account.name)}>
-                    <span className="account-mark" style={hueStyle(colorIndexFor(account.name))} title={providerLabel(account.provider)}>
-                      <ProviderLogo provider={account.provider} size={20} />
-                      <span className="visually-hidden">{account.name.slice(0, 1).toUpperCase()}</span>
-                    </span>
-                    <span className="account-copy">
-                      <strong>{account.name}</strong>
-                      <small>{account.email ?? MISSING_ADDRESS_LABEL}</small>
-                      <small className="account-backends">{account.backends.join(" · ")}</small>
-                    </span>
-                  </button>
+              const totalUnread = state.mailboxes.reduce((acc, mb) => acc + (mb.unread ?? 0), 0);
+              return (
+                <button
+                  key={account.name}
+                  data-account={account.name}
+                  role="tab"
+                  className={`account-tab ${isCurrent ? "active" : ""}`}
+                  type="button"
+                  onClick={() => chooseAccount(account.name)}
+                  aria-selected={isCurrent}
+                  aria-current={isCurrent ? "page" : undefined}
+                >
+                  <ProviderLogo provider={account.provider} size={14} />
+                  <span>{account.name}</span>
+                  {totalUnread > 0 && <span className="tab-unread-pill">{totalUnread}</span>}
                   {unifiedWarnings.some((warning) => warning.account === account.name) && <span className="account-warning" role="img" aria-label="Warnung beim letzten Laden" title="Warnung beim letzten Laden">⚠</span>}
-                  <button className={`favorite-button ${accountFavorites.has(account.name) ? "favorite" : ""}`} type="button" onClick={() => toggleAccountFavorite(account.name)} aria-label={`${accountFavorites.has(account.name) ? "Favorit entfernen" : "Als Favorit markieren"}: ${account.name}`}>
-                    <IconStar size={14} filled={accountFavorites.has(account.name)} />
-                    <span className="visually-hidden">{accountFavorites.has(account.name) ? "★" : "☆"}</span>
-                  </button>
-                  <div className="account-order-controls" role="group" aria-label={`Reihenfolge: ${account.name}`}>
-                    <button className="subtle-button" type="button" aria-label={`Nach oben verschieben: ${account.name}`} aria-disabled={groupIndex === 0} onClick={() => reorderVisibleAccount(account.name, "up")}>
-                      <IconArrowUp size={12} />
-                      <span className="visually-hidden">↑</span>
-                    </button>
-                    <button className="subtle-button" type="button" aria-label={`Nach unten verschieben: ${account.name}`} aria-disabled={groupIndex === renderedGroup.length - 1} onClick={() => reorderVisibleAccount(account.name, "down")}>
-                      <IconArrowDown size={12} />
-                      <span className="visually-hidden">↓</span>
-                    </button>
-                  </div>
-                </div>
-                {expanded && <div className="mailbox-children">
-                  {state.status === "loading" && <p className="mailbox-status" role="status">Ordner werden geladen …</p>}
-                  {state.status === "error" && <div className="mailbox-status"><p role="alert">{state.error}</p><button className="subtle-button" type="button" aria-label={`Ordner erneut laden: ${account.name}`} onClick={() => loadMailboxes(account.name)}>Erneut laden</button></div>}
-                  {state.status === "ready" && children.length === 0 && pinned.length === 0 && <p className="mailbox-status">{mailboxFilterMode === "favorites" ? "Keine bevorzugten Ordner" : "Keine Ordner gefunden"}</p>}
-                  {state.status === "ready" && (pinned.length > 0 || rest.length > 0) && <>
-                    {pinned.length > 0 && <div className="pinned-folders">{pinned.map(renderMailboxRow)}</div>}
-                    {rest.map(renderMailboxRow)}
-                  </>}
-                </div>}
-              </section>;
+                </button>
+              );
             })}
+            {!loadingAccounts && accounts.length > 0 && selectableAccounts.length === 0 && <div className="empty-state"><strong>Keine aktiven Konten sichtbar</strong><span>Aktiviere oder zeige mindestens ein Konto in der Verwaltung.</span><button className="subtle-button" type="button" onClick={() => setAccountManagerOpen(true)}>Konten verwalten</button></div>}
           </nav>
-        </aside>
+          <nav className="mailbox-tabs" role="tablist" aria-label="Ordner-Tabs">
+            {unifiedSelected ? (
+              <button role="tab" className="mailbox-tab active" type="button" aria-selected="true" aria-current="page">
+                <IconInbox size={13} />
+                <span>Alle Eingänge</span>
+              </button>
+            ) : currentAccount ? (
+              barMailboxes.map((mb) => {
+                const isCurrent = selectedMailbox === mb.id;
+                return (
+                  <button
+                    key={mb.id}
+                    data-mailbox={mb.id}
+                    role="tab"
+                    className={`mailbox-tab ${isCurrent ? "active" : ""}`}
+                    type="button"
+                    onClick={() => chooseMailbox(currentAccount.name, mb.id)}
+                    aria-selected={isCurrent}
+                    aria-current={isCurrent ? "page" : undefined}
+                  >
+                    <IconFolder size={13} />
+                    <span>{mb.name}</span>
+                    {mb.unread !== null && mb.unread > 0 && <span className="tab-unread-pill">{mb.unread}</span>}
+                  </button>
+                );
+              })
+            ) : null}
+            {currentAccount && barState?.status === "loading" && <p className="mailbox-status" role="status">Ordner werden geladen …</p>}
+            {currentAccount && barState?.status === "error" && <div className="mailbox-status"><p role="alert">{barState.error}</p><button className="subtle-button" type="button" aria-label={`Ordner erneut laden: ${currentAccount.name}`} onClick={() => loadMailboxes(currentAccount.name)}>Erneut laden</button></div>}
+          </nav>
+        </div>
+      </div>
+      <section className="workspace">
         <section className="messages-panel panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">{unifiedSelected ? "POSTEINGÄNGE" : multiSource ? "SUCHE" : currentAccount?.name ?? "KONTO"}</span>
+              {unifiedSelected || multiSource || !currentAccount
+                ? <span className="eyebrow">{unifiedSelected ? "POSTEINGÄNGE" : multiSource ? "SUCHE" : "KONTO"}</span>
+                : <span className="account-identity" title={currentAccount.name}><ProviderLogo provider={currentAccount.provider} size={14} /><strong>{currentAccount.email ?? currentAccount.name}</strong></span>}
               <h2>{unifiedSelected ? "Alle Eingänge" : multiSource ? "Suchergebnisse" : currentMailbox?.name ?? "Ordner"}</h2>
             </div>
             <div className="panel-heading-actions">
@@ -1774,80 +1707,6 @@ function App(): JSX.Element {
               </button>
             </div>
           </div>
-          {sidebarCollapsed && !multiSource && (
-            <div className="tabs-navigation">
-              <nav className="account-tabs" role="tablist" aria-label="Konten-Tabs">
-                {(() => {
-                  const unifiedTotalUnread = selectableAccounts.reduce((acc, account) => {
-                    const state = mailboxState(account.name);
-                    return acc + state.mailboxes.reduce((mAcc, mb) => mAcc + (mb.unread ?? 0), 0);
-                  }, 0);
-                  return (
-                    <button
-                      role="tab"
-                      className={`account-tab ${unifiedSelected ? "active" : ""}`}
-                      type="button"
-                      onClick={chooseUnifiedInbox}
-                      aria-selected={unifiedSelected}
-                      aria-current={unifiedSelected ? "page" : undefined}
-                    >
-                      <IconInbox size={13} />
-                      <span>Alle Eingänge</span>
-                      <span className="tab-unread-pill" title={unifiedTotalUnread > 0 ? `${unifiedTotalUnread} ungelesen (${unifiedAccounts.length} Konten)` : `${unifiedAccounts.length} Konten`}>
-                        {unifiedTotalUnread > 0 ? unifiedTotalUnread : `${unifiedAccounts.length} Konten`}
-                      </span>
-                    </button>
-                  );
-                })()}
-                {selectableAccounts.map((account) => {
-                  const isCurrent = !unifiedSelected && selectedAccount === account.name;
-                  const state = mailboxState(account.name);
-                  const totalUnread = state.mailboxes.reduce((acc, mb) => acc + (mb.unread ?? 0), 0);
-                  return (
-                    <button
-                      key={account.name}
-                      role="tab"
-                      className={`account-tab ${isCurrent ? "active" : ""}`}
-                      type="button"
-                      onClick={() => chooseAccount(account.name)}
-                      aria-selected={isCurrent}
-                      aria-current={isCurrent ? "page" : undefined}
-                    >
-                      <ProviderLogo provider={account.provider} size={14} />
-                      <span>{account.name}</span>
-                      {totalUnread > 0 && <span className="tab-unread-pill">{totalUnread}</span>}
-                    </button>
-                  );
-                })}
-              </nav>
-              <nav className="mailbox-tabs" role="tablist" aria-label="Ordner-Tabs">
-                {unifiedSelected ? (
-                  <button role="tab" className="mailbox-tab active" type="button" aria-current="page">
-                    <IconInbox size={13} />
-                    <span>Alle Eingänge</span>
-                  </button>
-                ) : currentAccount ? (
-                  mailboxState(currentAccount.name).mailboxes.map((mb) => {
-                    const isCurrent = selectedMailbox === mb.id;
-                    return (
-                      <button
-                        key={mb.id}
-                        role="tab"
-                        className={`mailbox-tab ${isCurrent ? "active" : ""}`}
-                        type="button"
-                        onClick={() => chooseMailbox(currentAccount.name, mb.id)}
-                        aria-current={isCurrent ? "page" : undefined}
-                      >
-                        <IconFolder size={13} />
-                        <span>{mb.name}</span>
-                        {mb.unread !== null && mb.unread > 0 && <span className="tab-unread-pill">{mb.unread}</span>}
-                      </button>
-                    );
-                  })
-                ) : null}
-              </nav>
-            </div>
-          )}
           {searchExpanded ? (
             <div className="search-section">
               <form className="message-search" onSubmit={runSearch}>

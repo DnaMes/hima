@@ -2,6 +2,20 @@
 
 All notable changes to the standalone Himalaya Web GUI are documented here.
 
+## 0.36.0 — 2026-10-26
+
+- Persistent mailbox bar:
+  - The account and folder tabs now sit permanently under the top bar and replace the left "Postfächer" sidebar; the message list and reader share the full width.
+  - "Neue Nachricht" and "Konten verwalten" moved to the top bar. Account order and visibility are managed in the account manager.
+  - The tab bar shows the "Keine aktiven Konten sichtbar" hint and the per-account load-warning badge that the sidebar used to carry.
+  - Removed the sidebar-only tree, account filter and favourite toggles and the Tabs-Modus switch.
+- Folder load failures show an alert with a retry button in the bar; the workspace height is now a flex layout instead of a hard-coded `calc()`; Inbox and Sent stay first in the folder tabs; folder tabs expose `aria-selected`.
+- **Breaking:** account and folder favourites, the account filter and drag reordering in the sidebar are gone (reordering stays in the account manager).
+- The open mailbox's email address is shown at the top of the message list panel.
+- Fixed the unreadable colour-scheme dropdown: `<option>` elements now use the theme panel and text colours.
+- Fixed the "1 Konten" label (now "1 Konto").
+- Added `tests/e2e/screenshots.spec.ts` (opt-in with `SCREENSHOTS=1`) that renders the README screenshots from synthetic data.
+
 ## 0.35.0 — 2026-10-26
 
 - Hima Rebranding & Open Source Release:

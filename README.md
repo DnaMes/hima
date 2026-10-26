@@ -4,12 +4,21 @@
 
 Hima (formerly Himalaya Web) provides a desktop-grade browser interface for the [Himalaya](https://github.com/soywod/himalaya) CLI. It stays strictly bound to loopback (`127.0.0.1`), keeps your mail and credentials on your machine, and uses your existing desktop keyring and Himalaya account configuration.
 
+![Hima with the Midnight theme](docs/screenshots/hima-midnight.png)
+
+<details><summary>Light theme (Catppuccin Latte)</summary>
+
+![Hima with the Catppuccin Latte theme](docs/screenshots/hima-catppuccin-latte.png)
+
+</details>
+
 ---
 
 ## Highlights
 
 - **Unified Multi-Account Inbox:** Seamlessly view, search, and manage emails across all your configured IMAP/JMAP/Maildir accounts in one unified stream.
-- **Modern 3-Pane Interface:** Ergonomic Superhuman/Apple-Mail style layout with two-line envelope summaries, folder & account tabs, collapsible search dock, and reading pane up to 1080px.
+- **Persistent Mailbox Bar:** All accounts and the open account's folders sit in a tab bar under the top bar (with unread counts and provider logos), so the list and the reader get the full width. The open mailbox's email address is always shown at the top of the message list.
+- **Two-Pane Reading Layout:** Superhuman/Apple-Mail style two-line envelope summaries, collapsible search dock, and a focused reading pane.
 - **Header-Based Threading:** Conversations are accurately grouped using standard `Message-ID`, `In-Reply-To`, and `References` headers.
 - **Fast Local Search:** Search within a folder, across an entire account, or across all accounts with filters for date range, unread status, flagged messages, and attachments.
 - **Privacy & Security First:**
@@ -22,7 +31,7 @@ Hima (formerly Himalaya Web) provides a desktop-grade browser interface for the 
   - **Local Labels & Snooze:** Tag and organize messages locally without mutating server flags.
   - **Draft Autosave:** Non-blocking localStorage draft recovery namespaced per message and account.
   - **Keyboard Navigation:** Full vim-style (`j`/`k`, `r`, `a`, `e`, `s`, `x`, `?`) keyboard shortcuts and `Ctrl+K` command palette.
-  - **Light/Dark Themes:** Built-in VS Code Dark, Catppuccin Macchiato, Nord, Monokai, Paper, and System themes.
+  - **Themes:** Built-in Midnight, VS Code Dark, Catppuccin Mocha, Catppuccin Latte, Nord, and Tokyo Night.
 
 ---
 
@@ -107,10 +116,10 @@ systemctl --user enable --now hima.service
 ## Development & Testing
 
 ```bash
-# Run unit tests (770 tests)
+# Run unit tests
 npm test
 
-# Run Playwright E2E tests (133 tests)
+# Run Playwright E2E tests
 npm run test:e2e
 
 # Run type check
@@ -118,7 +127,12 @@ npm run typecheck
 
 # Run dev server with hot reload
 npm run dev
+
+# Re-render the README screenshots from synthetic data
+SCREENSHOTS=1 npx playwright test tests/e2e/screenshots.spec.ts
 ```
+
+Releases are cut from annotated `vX.Y.Z` tags; see [RELEASE.md](RELEASE.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

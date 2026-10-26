@@ -43,9 +43,8 @@ async function setup(
   return calls;
 }
 
-const account = (page: Page, name: string) => page.getByRole("region", { name, exact: true });
-const folder = (page: Page, name: string, id: string) => account(page, name).getByRole("button", { name: `Ordner auswählen: ${id} (${name})`, exact: true });
-const disclosure = (page: Page, name: string) => account(page, name).getByRole("button", { name: new RegExp(`Ordner (ein|aus)klappen: ${name}`) });
+const account = (page: Page, name: string) => page.locator(`[data-account="${name}"]`);
+const folder = (page: Page, _name: string, id: string) => page.locator(".mailbox-tab").filter({ hasText: id });
 
 // Let response handlers and their React updates render before checking absence.
 async function settleResponse(page: Page, route: Route, response: Parameters<Route["fulfill"]>[0]) {
@@ -122,14 +121,12 @@ async function setupAiRace(page: Page) {
 for (const change of ["account", "mailbox", "unified", "message", "pagination", "search", "refresh"] as const) {
   test(`discards delayed AI after ${change} selection changes`, async ({ page }) => {
     const pending = await setupAiRace(page);
-    if (change === "account") await account(page, "beta").locator(".account-select").click();
+    if (change === "account") await account(page, "beta").click();
     else if (change === "mailbox") {
-      await disclosure(page, "alpha").click();
       await folder(page, "alpha", "Archiv").click();
     } else if (change === "unified") {
-      await page.getByRole("button", { name: "Alle Eingänge", exact: true }).click();
-      await disclosure(page, "alpha").click();
-      await folder(page, "alpha", "INBOX").click();
+      await page.locator(".account-tab").first().click();
+      await account(page, "alpha").click();
     } else if (change !== "message") await changeListContext(page, change);
     await page.locator(".envelope-row").nth(1).click();
     const source = change === "account" ? "beta/INBOX" : change === "mailbox" ? "alpha/Archive" : "alpha/INBOX";
@@ -166,150 +163,19 @@ test("loads mailboxes for the selected account without expanding its tree, cache
   const calls = await setup(page);
   await page.addInitScript(() => localStorage.setItem("himalaya-web-last-mailbox:alpha", "Archive"));
   await page.goto("/");
-  await expect(disclosure(page, "alpha")).toHaveAttribute("aria-expanded", "false");
   // Wait for the account-selection chain (mailboxes -> auto-picked mailbox ->
   // its messages) to settle before asserting on the calls it made.
   await expect.poll(() => calls.some((path) => path.startsWith("/api/accounts/alpha/messages?mailbox=Archive"))).toBe(true);
   expect(calls.filter((path) => path.endsWith("/mailboxes"))).toEqual(["/api/accounts/alpha/mailboxes"]);
-  await disclosure(page, "alpha").click();
   await expect(folder(page, "alpha", "Archiv")).toHaveAttribute("aria-current", "page");
-  await disclosure(page, "alpha").click();
-  await expect(disclosure(page, "beta")).toHaveAttribute("aria-expanded", "false");
-  await disclosure(page, "beta").click();
-  await expect(folder(page, "beta", "INBOX")).toBeVisible();
-  await expect(account(page, "beta").getByLabel("2 ungelesen")).toBeVisible();
-  await disclosure(page, "beta").click();
-  await disclosure(page, "beta").click();
+  await expect(folder(page, "alpha", "INBOX").locator(".tab-unread-pill")).toHaveText("2");
+  await account(page, "beta").click();
+  await expect(folder(page, "beta", "Archiv")).toBeVisible();
   expect(calls.filter((path) => path === "/api/accounts/beta/mailboxes")).toHaveLength(1);
   await folder(page, "beta", "Archiv").click();
   await expect(folder(page, "beta", "Archiv")).toHaveAttribute("aria-current", "page");
   await expect.poll(() => calls.some((path) => path.startsWith("/api/accounts/beta/messages?mailbox=Archive"))).toBe(true);
-  expect(calls.some((path) => path.startsWith("/api/accounts/beta/messages?mailbox=INBOX"))).toBe(false);
-  await expect(page.locator(".mailbox-tabs, .mailbox-toolbar")).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem("himalaya-web-last-account"))).toBe("beta");
-});
-
-test("isolates folder failures and favorites by account and keeps unified selection stable", async ({ page }) => {
-  await setup(page, async (name, route) => {
-    await route.fulfill(name === "gamma"
-      ? { status: 502, json: { error: "Ordner konnten nicht geladen werden." } }
-      : { json: { mailboxes: folders } });
-  });
-  await page.goto("/");
-  await disclosure(page, "alpha").click();
-  await expect(folder(page, "alpha", "INBOX")).toBeVisible();
-  await disclosure(page, "beta").click();
-  await disclosure(page, "gamma").click();
-  await expect(account(page, "gamma").getByRole("alert")).toContainText("Ordner konnten nicht geladen werden.");
-  await account(page, "alpha").getByRole("button", { name: "Ordner als Favorit markieren: Archiv (alpha)" }).click();
-  await page.getByRole("button", { name: "Ordner: Favoriten", exact: true }).click();
-  await expect(folder(page, "alpha", "Archiv")).toHaveAttribute("aria-current", "page");
-  await expect(folder(page, "beta", "INBOX")).toBeVisible(); // Inbox and Sent stay pinned even in the favorites view
-  await expect(folder(page, "beta", "Archiv")).toHaveCount(0);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("himalaya-web-mailbox-favorites-v1")!))).toEqual(["alpha:Archive"]);
-  await page.getByRole("button", { name: "Alle Eingänge", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Alle Eingänge", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.locator(".account-select[aria-current], .mailbox-select[aria-current]")).toHaveCount(0);
-  await page.getByRole("button", { name: "Ordner: Alle", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Alle Eingänge", exact: true })).toBeVisible();
-  await folder(page, "beta", "INBOX").click();
-  await expect(folder(page, "beta", "INBOX")).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("button", { name: "Alle Eingänge", exact: true })).not.toHaveAttribute("aria-current", "page");
-});
-
-test("ignores collapsed and superseded folder responses", async ({ page }) => {
-  const pending: Route[] = [];
-  await setup(page, async (name, route) => {
-    if (name === "beta") pending.push(route);
-    else await route.fulfill({ json: { mailboxes: folders } });
-  });
-  await page.goto("/");
-  await disclosure(page, "alpha").click();
-  await expect(folder(page, "alpha", "INBOX")).toBeVisible();
-  await disclosure(page, "beta").click();
-  await expect.poll(() => pending.length).toBe(1);
-  await expect(account(page, "beta")).toContainText("Ordner werden geladen");
-  await disclosure(page, "beta").click();
-  await disclosure(page, "beta").click();
-  await expect.poll(() => pending.length).toBe(2);
-  await pending[1]!.fulfill({ json: { mailboxes: folders } });
-  await expect(folder(page, "beta", "Archiv")).toBeVisible();
-  const oldResponse = page.waitForResponse((response) => response.url().endsWith("/beta/mailboxes"));
-  await pending[0]!.fulfill({ json: { mailboxes: [{ id: "stale", name: "Stale folder", total: 0, unread: 0 }] } });
-  await (await oldResponse).finished();
-  await expect(folder(page, "beta", "Archiv")).toBeVisible();
-  await expect(account(page, "beta")).not.toContainText("Stale folder");
-});
-
-test("supports keyboard and pointer moves without losing selection or refetching cached folders", async ({ page }) => {
-  const calls = await setup(page);
-  await page.goto("/");
-  await disclosure(page, "alpha").click();
-  await expect(folder(page, "alpha", "INBOX")).toHaveAttribute("aria-current", "page");
-  const names = page.locator(".account-list .account-copy strong");
-  const up = account(page, "beta").getByRole("button", { name: "Nach oben verschieben: beta" });
-  await up.focus();
-  await page.keyboard.press("Enter");
-  await expect(names).toHaveText(["beta", "alpha", "gamma"]);
-  await expect(up).toBeFocused();
-  await expect(up).toBeDisabled();
-  await expect(page.locator(".accounts-panel [aria-live=polite]")).toContainText("Konto beta verschoben");
-  await account(page, "gamma").locator(".account-row").dragTo(account(page, "beta").locator(".account-row"));
-  await expect(names).toHaveText(["gamma", "beta", "alpha"]);
-  await expect(folder(page, "alpha", "INBOX")).toHaveAttribute("aria-current", "page");
-  expect(calls.filter((path) => path.endsWith("/mailboxes"))).toEqual(["/api/accounts/alpha/mailboxes"]);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("himalaya-web-account-order-v1")!))).toEqual(["gamma", "beta", "alpha"]);
-  await page.reload();
-  await expect(names).toHaveText(["gamma", "beta", "alpha"]);
-});
-
-test("reorders accounts only within their rendered favorite group", async ({ page }) => {
-  await setup(page);
-  await page.addInitScript(() => {
-    localStorage.setItem("himalaya-web-favorites", JSON.stringify(["beta", "gamma"]));
-  });
-  await page.goto("/");
-
-  const names = page.locator(".account-list .account-copy strong");
-  const firstFavoriteUp = account(page, "beta").getByRole("button", { name: "Nach oben verschieben: beta" });
-  await expect(names).toHaveText(["beta", "gamma", "alpha"]);
-  await expect(firstFavoriteUp).toHaveAttribute("aria-disabled", "true");
-  await firstFavoriteUp.focus();
-  await page.keyboard.press("Enter");
-  await expect(names).toHaveText(["beta", "gamma", "alpha"]);
-  await expect(page.locator(".accounts-panel [aria-live=polite]")).toBeEmpty();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("himalaya-web-account-order-v1")!)))
-    .toEqual(["alpha", "beta", "gamma"]);
-
-  await account(page, "gamma").getByRole("button", { name: "Nach oben verschieben: gamma" }).click();
-  await expect(names).toHaveText(["gamma", "beta", "alpha"]);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("himalaya-web-account-order-v1")!)))
-    .toEqual(["alpha", "gamma", "beta"]);
-
-  await account(page, "alpha").locator(".account-row").dragTo(account(page, "gamma").locator(".account-row"));
-  await expect(names).toHaveText(["gamma", "beta", "alpha"]);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("himalaya-web-account-order-v1")!)))
-    .toEqual(["alpha", "gamma", "beta"]);
-});
-
-test("invalidates pending folders on reorder and allows an explicit retry", async ({ page }) => {
-  let pending: Route | undefined;
-  const calls = await setup(page, async (name, route) => {
-    if (name === "beta" && !pending) pending = route;
-    else await route.fulfill({ json: { mailboxes: folders } });
-  });
-  await page.goto("/");
-  await disclosure(page, "alpha").click();
-  await expect(folder(page, "alpha", "INBOX")).toBeVisible();
-  await disclosure(page, "beta").click();
-  await expect.poll(() => Boolean(pending)).toBe(true);
-  await account(page, "beta").getByRole("button", { name: "Nach oben verschieben: beta" }).click();
-  await pending!.fulfill({ json: { mailboxes: [{ id: "stale", name: "Stale folder", total: 0, unread: 0 }] } });
-  await expect(account(page, "beta").getByRole("button", { name: "Ordner erneut laden: beta" })).toBeVisible();
-  expect(calls.filter((path) => path === "/api/accounts/beta/mailboxes")).toHaveLength(1);
-  await account(page, "beta").getByRole("button", { name: "Ordner erneut laden: beta" }).click();
-  await expect(folder(page, "beta", "Archiv")).toBeVisible();
-  await expect(account(page, "beta")).not.toContainText("Stale folder");
 });
 
 test("selects an account, opens its INBOX without expanding the tree, and falls back to its first folder when INBOX is absent", async ({ page }) => {
@@ -318,18 +184,12 @@ test("selects an account, opens its INBOX without expanding the tree, and falls 
   });
   await page.addInitScript(() => localStorage.setItem("himalaya-web-last-mailbox:beta", "removed"));
   await page.goto("/");
-  await disclosure(page, "alpha").click();
   await expect(folder(page, "alpha", "INBOX")).toHaveAttribute("aria-current", "page");
-  await disclosure(page, "alpha").click();
-  await account(page, "beta").locator(".account-select").click();
-  await expect(account(page, "beta").locator(".account-select")).toHaveAttribute("aria-current", "page");
-  await expect(disclosure(page, "beta")).toHaveAttribute("aria-expanded", "false");
+  await account(page, "beta").click();
+  await expect(account(page, "beta")).toHaveAttribute("aria-current", "page");
   await expect.poll(() => calls.some((path) => path.startsWith("/api/accounts/beta/messages?mailbox=Archive"))).toBe(true);
-  await disclosure(page, "beta").click();
   await expect(folder(page, "beta", "Archiv")).toHaveAttribute("aria-current", "page");
-  await disclosure(page, "beta").click();
-  await account(page, "beta").locator(".account-select").click();
-  await disclosure(page, "beta").click();
+  await account(page, "beta").click();
   await expect(folder(page, "beta", "Archiv")).toHaveAttribute("aria-current", "page");
   expect(calls.filter((path) => path === "/api/accounts/beta/mailboxes")).toHaveLength(1);
 });
@@ -351,18 +211,17 @@ test("unified selection clears the reader and page and ignores pending message a
     else await route.fulfill({ json: detail });
   });
   await page.goto("/");
-  await disclosure(page, "alpha").click();
   await page.locator(".envelope-row").first().click();
   await expect(page.getByText("Synthetic tree body", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Alle Eingänge", exact: true }).click();
+  await page.locator(".account-tab").first().click();
   await expect(page.locator(".reader-content")).toHaveCount(0);
-  await folder(page, "alpha", "INBOX").click();
+  await account(page, "alpha").click();
   await expect(page.locator(".envelope-row")).toHaveCount(50);
   delayList = true;
   await page.getByRole("button", { name: "›", exact: true }).click();
   await expect.poll(() => Boolean(pendingList)).toBe(true);
   await expect(page.locator(".page-number")).toHaveText("2");
-  await page.getByRole("button", { name: "Alle Eingänge", exact: true }).click();
+  await page.locator(".account-tab").first().click();
   await expect(page.locator(".page-number")).toHaveText("1");
   const oldList = page.waitForResponse((response) => response.url().includes("/alpha/messages?"));
   await pendingList!.fulfill({ json: { envelopes: [envelope] } });
@@ -370,10 +229,10 @@ test("unified selection clears the reader and page and ignores pending message a
   await expect(page.locator(".envelope-row, .reader-content")).toHaveCount(0);
   delayList = false;
   delayDetail = true;
-  await folder(page, "alpha", "INBOX").click();
+  await account(page, "alpha").click();
   await page.locator(".envelope-row").first().click();
   await expect.poll(() => Boolean(pendingDetail)).toBe(true);
-  await page.getByRole("button", { name: "Alle Eingänge", exact: true }).click();
+  await page.locator(".account-tab").first().click();
   const oldDetail = page.waitForResponse((response) => response.url().includes("/api/message?"));
   await pendingDetail!.fulfill({ json: detail });
   await (await oldDetail).finished();
@@ -381,41 +240,10 @@ test("unified selection clears the reader and page and ignores pending message a
   await expect(page.locator(".envelope-row, .reader-content, .spinner")).toHaveCount(0);
 });
 
-test("keeps long folder trees in a bounded scroll area with visible keyboard controls", async ({ page }) => {
-  await setup(page, async (_name, route) => {
-    await route.fulfill({ json: { mailboxes: Array.from({ length: 60 }, (_, i) => ({ id: `folder-${i}`, name: `Synthetic folder ${i}`, total: 1, unread: 1 })) } });
-  });
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/");
-  // Expand via keyboard, not a mouse click: a click here would switch
-  // Chromium's focus-visible input modality to pointer and mask the
-  // later programmatic-focus outline assertion below.
-  await disclosure(page, "alpha").focus();
-  await page.keyboard.press("Enter");
-  const first = folder(page, "alpha", "Synthetic folder 0");
-  await expect(first).toHaveAttribute("aria-current", "page");
-  const nav = page.getByRole("navigation", { name: "Kontenliste" });
-  const metrics = await nav.evaluate((element) => ({ height: element.clientHeight, scrollHeight: element.scrollHeight, overflow: getComputedStyle(element).overflowY }));
-  expect(metrics.height).toBeGreaterThan(0);
-  expect(metrics.scrollHeight).toBeGreaterThan(metrics.height);
-  expect(metrics.overflow).toBe("auto");
-  await expect(account(page, "alpha").locator(".mailbox-children")).toHaveCSS("margin-left", "22px");
-  const up = account(page, "beta").getByRole("button", { name: "Nach oben verschieben: beta" });
-  await up.focus();
-  await expect(up).toBeFocused();
-  await expect(account(page, "beta").locator(".account-order-controls")).toHaveCSS("opacity", "1");
-  expect(await up.evaluate((element) => getComputedStyle(element).outlineStyle)).not.toBe("none");
-  await page.setViewportSize({ width: 1120, height: 800 });
-  const last = folder(page, "alpha", "Synthetic folder 59");
-  await last.click();
-  await expect(last).toHaveAttribute("aria-current", "page");
-  await expect(page.locator(".mailbox-tabs, .mailbox-toolbar")).toHaveCount(0);
-});
-
 test("starts a fresh session in the unified inbox instead of any single account", async ({ page }) => {
   await setup(page, undefined, { view: "unified" });
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Alle Eingänge", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.locator(".account-tab").first()).toHaveAttribute("aria-current", "page");
   await expect(page.locator(".account-row.active")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Alle Eingänge", exact: true })).toBeVisible();
 });
@@ -423,9 +251,8 @@ test("starts a fresh session in the unified inbox instead of any single account"
 test("opens an account's INBOX on click without expanding its folder tree", async ({ page }) => {
   await setup(page);
   await page.goto("/");
-  await account(page, "beta").locator(".account-select").click();
-  await expect(account(page, "beta").locator(".account-select")).toHaveAttribute("aria-current", "page");
-  await expect(disclosure(page, "beta")).toHaveAttribute("aria-expanded", "false");
+  await account(page, "beta").click();
+  await expect(account(page, "beta")).toHaveAttribute("aria-current", "page");
   await expect.poll(() => page.locator(".message-toolbar").isVisible()).toBe(true);
   await expect(page.locator(".mailbox-children")).toHaveCount(0);
 });
@@ -433,11 +260,23 @@ test("opens an account's INBOX on click without expanding its folder tree", asyn
 test("restores the previously selected mailbox after a reload", async ({ page }) => {
   await setup(page);
   await page.goto("/");
-  await disclosure(page, "alpha").click();
   await folder(page, "alpha", "Archiv").click();
   await expect(folder(page, "alpha", "Archiv")).toHaveAttribute("aria-current", "page");
   await page.reload();
-  await disclosure(page, "alpha").click();
   await expect(folder(page, "alpha", "Archiv")).toHaveAttribute("aria-current", "page");
   expect(await page.evaluate(() => localStorage.getItem("himalaya-web-last-view"))).toBe("account");
+});
+
+test("shows a folder load failure in the mailbox bar and retries on request", async ({ page }) => {
+  let failing = true;
+  await setup(page, async (_name, route) => {
+    if (failing) await route.fulfill({ status: 502, json: { error: "Ordner konnten nicht geladen werden." } });
+    else await route.fulfill({ json: { mailboxes: folders } });
+  });
+  await page.goto("/");
+  await expect(page.locator(".mailbox-bar").getByRole("alert")).toContainText("Ordner konnten nicht geladen werden.");
+  failing = false;
+  await page.getByRole("button", { name: "Ordner erneut laden: alpha" }).click();
+  await expect(folder(page, "alpha", "Archiv")).toBeVisible();
+  await expect(page.locator(".mailbox-bar").getByRole("alert")).toHaveCount(0);
 });

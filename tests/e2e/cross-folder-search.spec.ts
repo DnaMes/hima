@@ -98,7 +98,7 @@ test("choosing another folder returns to the folder scope", async ({ page }) => 
   await searchBtn(page).click();
   await expect(scopeSelect(page)).toHaveValue("all");
 
-  await page.getByRole("region", { name: "alpha", exact: true }).locator(".account-select").click();
+  await page.locator('[data-account="alpha"]').click();
   await expect(scopeSelect(page)).toHaveValue("folder");
 });
 

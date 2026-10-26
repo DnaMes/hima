@@ -31,11 +31,10 @@ test("shows a remembered folder list at once and refreshes it afterwards", async
   await page.goto("/");
   await expect(page.getByRole("button", { name: /Inbox first/ })).toBeVisible();
 
-  await page.getByRole("button", { name: "Ordner ausklappen: synthetic" }).click();
-  await page.getByRole("button", { name: "Ordner auswählen: Archive (synthetic)" }).click();
+  await page.locator(".mailbox-tab").filter({ hasText: "Archive" }).click();
   await expect(page.getByRole("button", { name: /Archive mail/ })).toBeVisible();
 
-  await page.getByRole("button", { name: "Ordner auswählen: INBOX (synthetic)" }).click();
+  await page.locator(".mailbox-tab").filter({ hasText: "INBOX" }).click();
   // The second INBOX request is held back, so this text can only come from the remembered list.
   await expect(page.getByRole("button", { name: /Inbox first/ })).toBeVisible();
   await secondSeen;

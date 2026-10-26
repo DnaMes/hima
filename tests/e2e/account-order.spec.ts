@@ -39,9 +39,9 @@ test("reorders accounts locally with keyboard focus, boundaries, favorites, and 
     localStorage.setItem("himalaya-web-last-view", "account");
   });
   await page.goto("/");
-  const navigationNames = page.locator(".account-list .account-copy strong");
-  await expect(navigationNames).toHaveText(["alpha", "gamma", "beta"]);
-  await expect(page.locator(".account-row.active strong")).toHaveText("beta");
+  const navigationNames = page.locator(".account-tab[data-account] > span:not(.tab-unread-pill)");
+  await expect(navigationNames).toHaveText(["gamma", "beta", "alpha"]);
+  await expect(page.locator(".account-tab.active")).toHaveAttribute("data-account", "beta");
   await expect(page.locator(".message-toolbar")).toContainText("0");
   await page.getByRole("button", { name: "Konten verwalten", exact: true }).click();
   const dialog = page.getByRole("dialog");
@@ -63,8 +63,8 @@ test("reorders accounts locally with keyboard focus, boundaries, favorites, and 
   await expect(moveUp).toBeDisabled();
   await page.keyboard.press("Enter");
   await expect(managerNames).toHaveText(["beta", "gamma", "hidden", "alpha"]);
-  await expect(navigationNames).toHaveText(["alpha", "beta", "gamma"]);
-  await expect(page.locator(".account-row.active strong")).toHaveText("beta");
+  await expect(navigationNames).toHaveText(["beta", "gamma", "alpha"]);
+  await expect(page.locator(".account-tab.active")).toHaveAttribute("data-account", "beta");
   expect(requests).toEqual(requestsBeforeMove);
   expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), ORDER_KEY))
     .toEqual(["beta", "gamma", "hidden", "alpha"]);
@@ -75,8 +75,8 @@ test("reorders accounts locally with keyboard focus, boundaries, favorites, and 
   await expect(moveDown).toBeFocused();
   await dialog.getByRole("button", { name: "Konfiguration neu laden" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(navigationNames).toHaveText(["alpha", "gamma", "beta"]);
-  await expect(page.locator(".account-row.active strong")).toHaveText("beta");
+  await expect(navigationNames).toHaveText(["gamma", "beta", "alpha"]);
+  await expect(page.locator(".account-tab.active")).toHaveAttribute("data-account", "beta");
   await page.getByRole("button", { name: "Konten verwalten", exact: true }).click();
   await expect(managerNames).toHaveText(["gamma", "beta", "hidden", "alpha"]);
   const hiddenRow = dialog.locator(".account-manager-row").filter({ has: page.getByText("hidden", { exact: true }) });
@@ -84,7 +84,7 @@ test("reorders accounts locally with keyboard focus, boundaries, favorites, and 
   await expect(hiddenRow.getByLabel("Sichtbar", { exact: true })).not.toBeChecked();
   await hiddenRow.getByLabel("Aktiv", { exact: true }).check();
   await hiddenRow.getByLabel("Sichtbar", { exact: true }).check();
-  await expect(navigationNames).toHaveText(["alpha", "gamma", "beta", "hidden"]);
+  await expect(navigationNames).toHaveText(["gamma", "beta", "hidden", "alpha"]);
 });
 
 for (const scenario of [
@@ -105,10 +105,10 @@ for (const scenario of [
     }, scenario);
     await page.goto("/");
     if (scenario.expected) {
-      await expect(page.locator(".account-row.active strong")).toHaveText(scenario.expected);
+      await expect(page.locator(".account-tab.active")).toHaveAttribute("data-account", scenario.expected);
     } else {
       await expect(page.getByText("Keine aktiven Konten sichtbar")).toBeVisible();
-      await expect(page.locator(".account-row.active")).toHaveCount(0);
+      await expect(page.locator(".account-tab.active[data-account]")).toHaveCount(0);
     }
   });
 }

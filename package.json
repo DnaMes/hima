@@ -1,6 +1,6 @@
 {
   "name": "hima",
-  "version": "0.35.0",
+  "version": "0.36.0",
   "description": "Fast, local-first browser email client powered by the Himalaya CLI",
   "license": "MIT",
   "repository": {

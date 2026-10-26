@@ -10,11 +10,11 @@ const envelope = (account: string, mailbox = "INBOX"): Envelope => ({
 });
 const warning = { account: "broken", code: "AUTH_REQUIRED", message: "Bitte prüfe die Anmeldung dieses Kontos." };
 const result = (envelopes = [envelope("alpha"), envelope("beta", "Inbox")], hasMore = false): UnifiedInboxResult => ({ envelopes, hasMore, warnings: [warning] });
-const unified = (page: Page) => page.getByRole("button", { name: "Alle Eingänge", exact: true });
+const unified = (page: Page) => page.locator(".account-tab").first();
 const row = (page: Page, account: string, mailbox = "INBOX") => page.getByRole("button", { name: new RegExp(`Synthetic ${account} ${mailbox}`) });
 // Returns to the "normal" (non-unified) view by selecting the alpha account,
 // which opens its INBOX without requiring the tree to be expanded.
-const normal = (page: Page) => page.getByRole("region", { name: "alpha", exact: true }).locator(".account-select");
+const normal = (page: Page) => page.locator('[data-account="alpha"]');
 
 type Call = { path: string; query: Record<string, string>; method: string; body: any; authenticated: boolean };
 async function setup(page: Page, handle?: (route: Route) => Promise<void>) {
