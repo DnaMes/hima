@@ -19,6 +19,7 @@ automated tests.
 - Real-UI verification (2026-10-26, live service): verified generous middle frame width, clean 2-line unclipped message items, authentic brand logos, single stars, calm hover states, and focused reader view.
 
 ## Current Progress
+- **Doc-ops (2026-10-26, research refs + vault sync).** Fixed dead backticked paths in `docs/research/2026-10-phishing-heuristics-and-feature-gaps.md` (rspamd redirectors map, URLhaus/Mozilla/Google support URLs were host-looking tokens the checker treated as repo paths). Replaced embedded HIBP dollar tiers with pointers to the HIBP Subscription page and to `~/projects/ai-stack/docs/roles.md` / `~/projects/ai-stack/subscriptions/SUBSCRIPTIONS.md` for stack costs. Marked the research top-10 feature gaps as shipped in 0.35.0. Synced `AGENTS.md` parachute state and `~/ObsidianVault/2-Projects/tools/himalaya-web/index.md` to 0.35.0. Verified with `~/projects/ai-stack/claude/bin/doc-refs-check.sh`: 0 missing on the research note and on README/HANDOFF/AGENTS/SECURITY/CHANGELOG. No commit.
 - **Version 0.30.0 (2026-10-26, authentic provider logos & full modern UI/UX overhaul) implemented and verified.**
   - **Authentic Brand Vector Logos (`src/client/provider-logos.tsx`):**
     - **Lima-City:** Replaced generic placeholder with the official server rack circuit arch vector extracted directly from `https://mail.lima-city.de/lima-city-branding/logo-small.svg`.

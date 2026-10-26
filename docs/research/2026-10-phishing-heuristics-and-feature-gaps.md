@@ -44,9 +44,10 @@ brand rules: `FROM_BLANK_NAME`, `FROM_NO_USER`, `FROM_DOMAIN_NOVOWEL`, `FROM_ILL
 (`DKIM_INVALID`, `DKIM_VALID_AU`, `DMARC_PASS/REJECT/QUAR/NONE/MISSING`); brand/feed matching
 is delegated to the `Phishing` plugin. rspamd does link-text-vs-href TLD comparison in its
 `phishing` module and follows redirectors via `url_redirector` with a 1,197-entry
-`conf/maps.d/redirectors.inc`. Thunderbird has a built-in scam detector (link text vs URL,
-scam banner). Gmail uses server-side ML plus `Authentication-Results`, a "via" display for
-unaligned senders, external-image blocking, and link warnings.
+map at https://github.com/rspamd/rspamd/blob/master/conf/maps.d/redirectors.inc.
+Thunderbird has a built-in scam detector (link text vs URL, scam banner). Gmail uses
+server-side ML plus `Authentication-Results`, a "via" display for unaligned senders,
+external-image blocking, and link warnings.
 
 ## 2. Free offline data sources
 
@@ -73,15 +74,15 @@ unaligned senders, external-image blocking, and link warnings.
 
 ## 3. Leaked-address handling
 
-HIBP (fetched 2026-10, `haveibeenpwned.com/Subscription`, `/API/v3`):
+HIBP (fetched 2026-10, https://haveibeenpwned.com/Subscription and `/API/v3`):
 
 - **Free:** browser email search, email notifications, Pwned Passwords, breach-monitoring API,
-  and domain monitoring with **up to 10 breached addresses**.
+  and domain monitoring with a small breached-address cap.
 - **Domain search** requires proving ownership (DNS or email) and an API key; unverified
-  domains return HTTP 403. Core starts at **$4.39/mo** (Core 1: 10 RPM, 25 breached addresses,
-  1 domain; Core 2: 50 RPM, 100 addresses, 3 domains, $21.59/mo; Core 5: 1,000 RPM, unlimited,
-  20 domains, $319/mo). Single-address API = Core or above (free is browser-only).
-  K-anonymity search is **Pro-exclusive**, from $379/mo; High RPM from $1,150/mo.
+  domains return HTTP 403. Paid Core/Pro tiers cover single-address API, higher RPM, and
+  K-anonymity — current prices live on the HIBP Subscription page only (do not copy dollar
+  figures here). Agent model and stack subscription costs live only in
+  `~/projects/ai-stack/docs/roles.md` and `~/projects/ai-stack/subscriptions/SUBSCRIPTIONS.md`.
 - **Mitigation:** per-service plus-addressing/aliases (`user+service@domain`) so a leak
   identifies the sender; rotate the alias after a hit; enable free HIBP Notify per address;
   use free domain monitoring if the user owns the domain. Verify lima-city's spam-filter
@@ -89,37 +90,44 @@ HIBP (fetched 2026-10, `haveibeenpwned.com/Subscription`, `/API/v3`):
 
 ## 4. Feature gaps and top-10 value/effort
 
-Current state (`README.md`, `src/shared/types.ts`, `src/server/unified-inbox.ts`,
-`src/server/rules.ts`): single-account move only (no copy), Markdown export + PDF print but
-no `.eml` save, no clipboard copy, no header/auth panel, unified inbox hard-coded to each
-visible+active account's `INBOX`, field-scoped search per mailbox, hand-edited `rules.json`
-that runs only at watcher time, no saved searches/smart folders, no filter UI. Thunderbird,
-Apple Mail, Fastmail, Superhuman and Mailspring all offer copy-to-folder, message source/
-headers, unified-inbox selection, cross-account search, saved searches and a filter UI;
-Proton is the closest analogue in limitations.
+Status as of Hima **0.35.0** (`README.md`, `CHANGELOG.md`, `src/server/phishing.ts`):
+most of the October research gaps below are **shipped**. Remaining work is polish and
+operator-side HIBP domain monitoring, not the original top-10 list.
 
-1. **Sender details panel: full headers + SPF/DKIM/DMARC** — high value, low effort
-   (`readRaw` already returns the raw buffer; `parseRawMessage` already feeds `mailparser`).
-2. **Copy actions: body to clipboard, copy message to folder, download `.eml`** — medium,
-   low (`readRaw` + raw parse exist).
-3. **Unified-inbox account/folder chooser** — high, low-medium.
-4. **Cross-folder / cross-account search** — high, medium-high (`buildSearchQuery`/paging exist).
-5. **Phishing/scam score banner from §1** — high, medium (pure local parse, off by default).
-6. **Visual filter UI over `rules.json`** — medium, low-medium.
-7. **Saved searches / smart folders** — medium, medium.
-8. **Sender history panel (first-seen, prior replies)** — high, medium-high (small local index).
-9. **Report-phishing / whitelist actions** — medium, low.
-10. **Copy sender address / copy link** — low, low.
+| # | Item | State in 0.35.0 |
+|---|---|---|
+| 1 | Sender details + SPF/DKIM/DMARC | Shipped (`src/client/sender-panel.tsx`) |
+| 2 | Copy body / copy to folder / `.eml` | Shipped |
+| 3 | Unified-inbox account/folder chooser | Shipped (account tree + tabs) |
+| 4 | Cross-folder / cross-account search | Shipped (`src/server/search-scope.ts`) |
+| 5 | Phishing/scam score banner (§1) | Shipped (`src/server/phishing.ts`, offline heuristics) |
+| 6 | Visual filter UI over `rules.json` | Shipped (`src/client/rules-dialog.tsx`) |
+| 7 | Saved searches | Shipped (`src/client/saved-searches.ts`) |
+| 8 | Sender history panel | Shipped (`src/client/sender-history.ts`) |
+| 9 | Report-phishing / whitelist | Shipped (trust/report sender routes) |
+| 10 | Copy sender address / copy link | Shipped with copy actions |
+
+**Still open (low urgency):** live threat-feed refresh (OpenPhish/URLhaus) is intentionally
+out of scope — scoring stays offline; HIBP free domain monitoring for owned domains is an
+operator task, not app code.
 
 ## Sources
 
 Local: `README.md`, `HANDOFF.md`, `src/server/mime.ts`, `src/server/himalaya.ts`,
-`src/shared/types.ts`, `src/server/unified-inbox.ts`, `src/server/rules.ts`.
-HIBP `haveibeenpwned.com/Subscription` + `/API/v3`; OpenPhish
-`phishing_feeds.html`/`terms.html`/`feed.txt`; `urlhaus.abuse.ch/api/` + `/downloads/text/`;
-`phishtank.org/developer_info.php`; Apache SpamAssassin trunk `rules/…`; rspamd
-`phishing.html`, `url_redirector.html`, `conf/maps.d/redirectors.inc`; npm downloads/registry
-APIs; `support.mozilla.org/en-US/kb/thunderbird-and-scams`; `support.google.com/mail/answer/8253`.
+`src/shared/types.ts`, `src/server/unified-inbox.ts`, `src/server/rules.ts`,
+`src/server/phishing.ts`.
+HIBP https://haveibeenpwned.com/Subscription and `/API/v3`; OpenPhish
+https://openphish.com/phishing_feeds.html / terms / feed.txt; URLhaus
+https://urlhaus.abuse.ch/api/ and https://urlhaus.abuse.ch/downloads/text/;
+https://phishtank.org/developer_info.php; Apache SpamAssassin trunk rules; rspamd
+phishing and url_redirector docs plus
+https://github.com/rspamd/rspamd/blob/master/conf/maps.d/redirectors.inc;
+npm downloads/registry APIs;
+https://support.mozilla.org/en-US/kb/thunderbird-and-scams;
+https://support.google.com/mail/answer/8253.
+Stack model/subscription inventory (not duplicated here):
+`~/projects/ai-stack/docs/roles.md`,
+`~/projects/ai-stack/subscriptions/SUBSCRIPTIONS.md`.
 
 **Remaining web checks:** official federal domain list; lima-city spam-filter capabilities;
 per-client feature cells (Apple/Proton/Superhuman/Mailspring) not verified first-hand.
