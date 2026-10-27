@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { addLabels, hasLabel, labelNames } from "./labels.js";
+import { addLabels, hasLabel, labelHueIndex, labelNames } from "./labels.js";
 
 const entry = (labels: string[], message = "1") => ({ account: "a", mailbox: "INBOX", message, labels });
 
@@ -20,5 +20,16 @@ describe("labels", () => {
     expect(addLabels([], "   ")).toBeNull();
     expect(addLabels([], "x".repeat(25))).toBeNull();
     expect(addLabels(["1", "2", "3", "4", "5"], "6")).toBeNull();
+  });
+
+  it("maps label names to deterministic hue indexes between 0 and 7", () => {
+    const taxHue = labelHueIndex("Steuer");
+    expect(taxHue).toBeGreaterThanOrEqual(0);
+    expect(taxHue).toBeLessThan(8);
+    // Case-insensitivity & whitespace trimming
+    expect(labelHueIndex(" steuer ")).toBe(taxHue);
+    expect(labelHueIndex("STEUER")).toBe(taxHue);
+    // Stable check
+    expect(Number.isInteger(labelHueIndex("Projekt-X"))).toBe(true);
   });
 });

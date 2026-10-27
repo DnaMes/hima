@@ -38,6 +38,10 @@ test("moves through the list with j/k, opens the help with ? and ignores typing"
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
+  await page.keyboard.press("l");
+  await expect(page.getByLabel("Etikett hinzufügen")).toBeFocused();
+  await page.getByLabel("Etikett hinzufügen").blur();
+
   await page.keyboard.press("r");
   await expect(page.getByRole("dialog")).toBeVisible();
 });

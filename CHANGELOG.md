@@ -2,6 +2,22 @@
 
 All notable changes to the standalone Himalaya Web GUI are documented here.
 
+## 0.37.0 — 2026-10-27
+
+- Direct Account Reordering:
+  - Account tabs in the horizontal bar are now directly draggable via HTML5 Drag & Drop with immediate reordering and persistence.
+  - Added power keyboard shortcut: press <kbd>Alt + ←</kbd> or <kbd>Alt + →</kbd> on any focused account tab to shift its position left or right without opening the manager dialog.
+  - Added visual drop indicators and grab cursors for `.account-tab`.
+- Rich Deterministic Tags & Labels System:
+  - Added `labelHueIndex(name)` in `src/client/labels.ts` to map tags deterministically to one of 8 theme-contrast-tested hues (`--account-hue-*`).
+  - Added styled tag pills with colored indicator dots (`.label-dot`) in both the envelope message list and reader view.
+  - Added interactive Tag Filter Pills bar (`.label-filter-bar`) right above the message list for instant single-click tag filtering.
+  - Added bulk tagging in multi-select mode ("Auswählen"): apply tags in bulk across all checked messages.
+- Power Keyboard Shortcuts:
+  - <kbd>L</kbd>: Quick label draft input focus in the reader view.
+  - <kbd>E</kbd>: Quick archive action (moves the selected message to the account's Archive folder).
+  - Documented new shortcuts in the keyboard shortcuts dialog (<kbd>?</kbd>).
+
 ## 0.36.1 — 2026-10-26
 
 - Cleaned up obsolete sidebar state and helpers:

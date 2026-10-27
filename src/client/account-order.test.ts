@@ -7,6 +7,7 @@ import {
   normalizeAccountOrder,
   orderedAccounts,
   readAccountOrder,
+  reorderAccountTo,
   writeAccountOrder,
 } from "./account-order.js";
 
@@ -85,5 +86,15 @@ describe("account order", () => {
     expect(moveAccount(order, "missing", "down")).toEqual(order);
     expect(moveAccount(order, "cloudflare", "down")).toEqual(order);
     expect(order).toEqual(["andre", "anna", "cloudflare"]);
+  });
+
+  it("reorders accounts to a target position", () => {
+    const order = ["alpha", "beta", "gamma", "delta"];
+
+    expect(reorderAccountTo(order, "alpha", "gamma")).toEqual(["beta", "gamma", "alpha", "delta"]);
+    expect(reorderAccountTo(order, "delta", "alpha")).toEqual(["delta", "alpha", "beta", "gamma"]);
+    expect(reorderAccountTo(order, "beta", "beta")).toEqual(order);
+    expect(reorderAccountTo(order, "unknown", "alpha")).toEqual(order);
+    expect(reorderAccountTo(order, "alpha", "unknown")).toEqual(order);
   });
 });

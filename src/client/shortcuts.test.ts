@@ -11,6 +11,8 @@ describe("shortcutFor", () => {
     expect(press("k")).toBe("previous");
     expect(press("r")).toBe("reply");
     expect(press("#")).toBe("delete");
+    expect(press("e")).toBe("archive");
+    expect(press("l")).toBe("label");
     expect(press("?")).toBe("help");
   });
 

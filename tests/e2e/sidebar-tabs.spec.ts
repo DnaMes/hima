@@ -76,6 +76,14 @@ test("shows the persistent account and folder bar instead of a sidebar, names th
   await expect(syntheticTab).toHaveAttribute("aria-selected", "true");
   await expect(syntheticTab).toBeFocused();
 
+  // Account tab reordering via keyboard shortcut Alt + ArrowRight / Alt + ArrowLeft
+  await expect(syntheticTab).toHaveAttribute("draggable", "true");
+  await syntheticTab.focus();
+  await page.keyboard.press("Alt+ArrowRight");
+  await expect(page.locator(".account-tabs button[data-account]").first()).toHaveAttribute("data-account", "work");
+  await page.keyboard.press("Alt+ArrowLeft");
+  await expect(page.locator(".account-tabs button[data-account]").first()).toHaveAttribute("data-account", "synthetic");
+
   // Keyboard navigation & roving tabindex on mailbox tabs
   const inboxTab = page.getByRole("tab", { name: "INBOX" });
   await expect(inboxTab).toHaveAttribute("tabindex", "0");

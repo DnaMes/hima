@@ -588,6 +588,23 @@ select option { background: var(--panel); color: var(--text); }
   white-space: nowrap;
   cursor: pointer;
   transition: all 140ms ease;
+  user-select: none;
+}
+.account-tab[draggable="true"] {
+  cursor: grab;
+}
+.account-tab[draggable="true"]:active {
+  cursor: grabbing;
+}
+.account-tab.dragging {
+  opacity: 0.45;
+  transform: scale(0.97);
+}
+.account-tab.drag-over {
+  border-color: var(--accent);
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--accent) 15%, var(--field));
 }
 .account-tab:hover {
   background: color-mix(in srgb, var(--selected) 70%, transparent);
@@ -1174,9 +1191,67 @@ kbd { display: inline-block; border: 1px solid var(--border); border-bottom-widt
 .snoozed-list li { display: flex; justify-content: space-between; align-items: center; gap: 14px; color: var(--text); font-size: 13px; }
 .snoozed-list small { display: block; color: var(--muted-text); font-size: 11px; margin-top: 3px; }
 .label-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 16px; border-bottom: 1px solid var(--border); background: var(--area-reader); font-size: 12px; }
-.label-chip, .row-label { display: inline-flex; align-items: center; gap: 4px; border: 1px solid color-mix(in srgb, var(--title-reader) 50%, var(--border)); border-radius: 999px; padding: 1px 8px; background: color-mix(in srgb, var(--title-reader) 14%, transparent); color: var(--text); font-size: 11px; white-space: nowrap; }
-.label-chip button { border: 0; background: transparent; color: var(--muted-text); padding: 0 2px; font-size: 13px; line-height: 1; }
+.label-chip, .row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--c, var(--title-reader)) 50%, var(--border));
+  border-radius: 999px;
+  padding: 1px 8px;
+  background: color-mix(in srgb, var(--c, var(--title-reader)) 14%, transparent);
+  color: var(--text);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.label-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c, var(--accent));
+  flex-shrink: 0;
+}
+.label-chip button { border: 0; background: transparent; color: var(--muted-text); padding: 0 2px; font-size: 13px; line-height: 1; cursor: pointer; }
+.label-chip button:hover { color: var(--text); }
 .label-bar input { min-width: 150px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--field); color: var(--text); font-size: 12px; }
-.row-label { margin-left: 6px; padding: 0 6px; font-size: 10px; vertical-align: middle; }
+.row-label { margin-left: 6px; padding: 1px 7px; font-size: 10.5px; vertical-align: middle; }
+.label-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  background: color-mix(in srgb, var(--panel) 60%, transparent);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.label-filter-bar::-webkit-scrollbar { display: none; }
+.label-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--c, var(--border)) 45%, var(--border));
+  background: color-mix(in srgb, var(--c, var(--field)) 10%, transparent);
+  color: var(--muted-text);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 120ms ease;
+}
+.label-filter-pill:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--c, var(--accent)) 65%, var(--border));
+  background: color-mix(in srgb, var(--c, var(--field)) 20%, transparent);
+}
+.label-filter-pill.active {
+  color: var(--text);
+  font-weight: 600;
+  border-color: var(--c, var(--accent));
+  background: color-mix(in srgb, var(--c, var(--accent)) 22%, transparent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
 .mailbox-bar .mailbox-status { display: inline-flex; align-items: center; gap: 8px; margin: 0; color: var(--muted-text); font-size: 11.5px; }
 .mailbox-bar .mailbox-status [role="alert"] { color: var(--error); }

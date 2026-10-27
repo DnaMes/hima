@@ -33,7 +33,7 @@ import type { HistoryView } from "./sender-history.js";
 import { collectContacts } from "./contacts.js";
 import { previewFor } from "./attachment-preview.js";
 import type { PreviewKind } from "./attachment-preview.js";
-import { addLabels, hasLabel, labelNames } from "./labels.js";
+import { addLabels, hasLabel, labelHueIndex, labelNames } from "./labels.js";
 import type { LabeledMessage } from "./labels.js";
 import { ListCache } from "./list-cache.js";
 import { formatWake, snoozeKey, wakeOptions } from "./snooze.js";
@@ -72,6 +72,7 @@ import {
   normalizeAccountOrder,
   orderedAccounts,
   readAccountOrder,
+  reorderAccountTo,
   writeAccountOrder,
 } from "./account-order.js";
 import { api } from "./api-client.js";
@@ -265,6 +266,8 @@ function App(): JSX.Element {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set());
   const [composerSeed, setComposerSeed] = useState<ComposerSeed | null>(null);
+  const [draggedAccount, setDraggedAccount] = useState<string | null>(null);
+  const [dragOverAccount, setDragOverAccount] = useState<string | null>(null);
   const [accountMoveNotice, setAccountMoveNotice] = useState<{ name: string; sequence: number } | null>(null);
   const [colorState, setColorState] = useState<AccountColorState>(() => (
     preferenceStorage ? readAccountColorState(preferenceStorage) : emptyAccountColorState()
@@ -314,6 +317,7 @@ function App(): JSX.Element {
   const accountManagerCloseButton = useRef<HTMLButtonElement>(null);
   const accountManagerWasOpen = useRef(false);
   const searchInput = useRef<HTMLInputElement>(null);
+  const labelInputRef = useRef<HTMLInputElement>(null);
   const shortcutHandler = useRef<(action: ShortcutAction) => void>(() => undefined);
   const mailboxes = selectedAccount ? mailboxState(selectedAccount).mailboxes : EMPTY_MAILBOX_STATE.mailboxes;
   const orderedAccountList = useMemo(() => orderedAccounts(accounts, accountOrder), [accounts, accountOrder]);
@@ -625,6 +629,8 @@ function App(): JSX.Element {
     else if (action === "previous") open(index < 0 ? 0 : Math.max(index - 1, 0));
     else if (action === "reply" || action === "reply-all" || action === "forward") compose(action);
     else if (action === "delete") { if (selectedMessage) void deleteMessage(); }
+    else if (action === "archive") { if (selectedMessage) void archiveMessage(); }
+    else if (action === "label") { labelInputRef.current?.focus(); }
     else if (action === "toggle-seen") {
       const current = envelopes.find((item) => matchesRef(item, selectedMessage));
       if (current) void setMessageSeen(!isSeen(current));
@@ -813,6 +819,20 @@ function App(): JSX.Element {
   function handleTabKeyDown(event: React.KeyboardEvent<HTMLElement>): void {
     const target = (event.target as HTMLElement).closest<HTMLButtonElement>('[role="tab"]');
     if (!target) return;
+
+    const accountName = target.getAttribute("data-account");
+    if (accountName && event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      event.preventDefault();
+      const direction = event.key === "ArrowLeft" ? "up" : "down";
+      reorderAccount(accountName, direction);
+      setNotice(`Konto „${accountName}“ verschoben.`);
+      window.setTimeout(() => {
+        const nextFocused = document.querySelector<HTMLButtonElement>(`[role="tab"][data-account="${accountName}"]`);
+        nextFocused?.focus();
+      }, 0);
+      return;
+    }
+
     const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
     const index = tabs.indexOf(target);
     if (index < 0) return;
@@ -945,6 +965,41 @@ function App(): JSX.Element {
       setActiveSearch({ ...activeSearch });
     } catch (reason: unknown) {
       if (requestId === detailRequest.current) setError(reason instanceof Error ? reason.message : "Nachricht konnte nicht verschoben werden.");
+    }
+  }
+
+  async function archiveMessage(): Promise<void> {
+    if (!selectedMessage) return;
+    const available = mailboxState(selectedMessage.account).mailboxes;
+    const archiveBox = available.find((mb) => {
+      const lower = mb.name.toLocaleLowerCase("de-DE");
+      return lower === "archive" || lower === "archiv" || lower.includes("archiv");
+    });
+    if (!archiveBox) {
+      setNotice("Kein Archiv-Ordner gefunden.");
+      return;
+    }
+    if (archiveBox.id === selectedMessage.mailbox) {
+      setNotice("Nachricht befindet sich bereits im Archiv.");
+      return;
+    }
+    const requestId = detailRequest.current;
+    try {
+      await api(session, "/api/message/move", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ref: selectedMessage, destination: archiveBox.id }),
+      });
+      if (requestId !== detailRequest.current) return;
+      setNotice(`Nachricht nach „${archiveBox.name}“ archiviert.`);
+      const moved = selectedMessage;
+      setEnvelopes((current) => current.filter((item) => !matchesRef(item, moved)));
+      forgetLabelsOf([moved]);
+      clearReaderSelection();
+      invalidateCaches();
+      setActiveSearch({ ...activeSearch });
+    } catch (reason: unknown) {
+      if (requestId === detailRequest.current) setError(reason instanceof Error ? reason.message : "Archivieren fehlgeschlagen.");
     }
   }
 
@@ -1098,6 +1153,47 @@ function App(): JSX.Element {
       invalidateCaches();
       setActiveSearch({ ...activeSearch });
     } finally { setBulkBusy(false); }
+  }
+
+  async function bulkLabel(labelName: string, remove = false): Promise<void> {
+    const trimmed = labelName.trim();
+    if (!trimmed || bulkBusy) return;
+    const targets = envelopes.filter((item) => checked.has(checkKey(item)));
+    if (targets.length === 0) return;
+    setBulkBusy(true);
+    try {
+      let count = 0;
+      for (const item of targets) {
+        const ref = envelopeRef(item);
+        if (!ref) continue;
+        const key = snoozeKey(ref);
+        const currentLabels = labelsByKey.get(key) ?? [];
+        let nextLabels: string[];
+        if (remove) {
+          nextLabels = currentLabels.filter((l) => l.toLocaleLowerCase("de-DE") !== trimmed.toLocaleLowerCase("de-DE"));
+        } else {
+          if (hasLabel(currentLabels, trimmed) || currentLabels.length >= 5) continue;
+          nextLabels = [...currentLabels, trimmed];
+        }
+        try {
+          await api(session, "/api/labels", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ref, labels: nextLabels }),
+          });
+          setLabelEntries((curr) => [
+            ...curr.filter((entry) => snoozeKey(entry) !== key),
+            ...(nextLabels.length > 0 ? [{ ...ref, labels: nextLabels }] : []),
+          ]);
+          count += 1;
+        } catch {
+          // ignore single item failure and continue
+        }
+      }
+      setNotice(remove ? `Etikett „${trimmed}“ von ${count} Nachricht(en) entfernt.` : `Etikett „${trimmed}“ an ${count} Nachricht(en) vergeben.`);
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   function allowImages(always: boolean): void {
@@ -1560,13 +1656,45 @@ function App(): JSX.Element {
               const isCurrent = !unifiedSelected && selectedAccount === account.name;
               const state = mailboxState(account.name);
               const totalUnread = state.mailboxes.reduce((acc, mb) => acc + (mb.unread ?? 0), 0);
+              const isDragging = draggedAccount === account.name;
+              const isDragOver = dragOverAccount === account.name;
               return (
                 <button
                   key={account.name}
                   data-account={account.name}
                   role="tab"
-                  className={`account-tab ${isCurrent ? "active" : ""}`}
+                  className={`account-tab ${isCurrent ? "active" : ""} ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""}`}
                   type="button"
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData("text/plain", account.name);
+                    event.dataTransfer.effectAllowed = "move";
+                    setDraggedAccount(account.name);
+                  }}
+                  onDragOver={(event) => {
+                    if (draggedAccount && draggedAccount !== account.name) {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                      if (dragOverAccount !== account.name) setDragOverAccount(account.name);
+                    }
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverAccount === account.name) setDragOverAccount(null);
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (draggedAccount && draggedAccount !== account.name) {
+                      const next = reorderAccountTo(accountOrder, draggedAccount, account.name);
+                      applyAccountOrder(draggedAccount, next);
+                      setNotice(`Konto „${draggedAccount}“ verschoben.`);
+                    }
+                    setDraggedAccount(null);
+                    setDragOverAccount(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedAccount(null);
+                    setDragOverAccount(null);
+                  }}
                   onClick={() => chooseAccount(account.name)}
                   aria-selected={isCurrent}
                   aria-controls="workspace-panel"
@@ -1758,6 +1886,33 @@ function App(): JSX.Element {
             )
           )}
           <div className="message-toolbar"><span>{loadingMessages ? "Lade …" : `${envelopes.length} Nachrichten`}</span><div><button className="subtle-button" type="button" aria-pressed={threadView} onClick={() => { localStorage.setItem("himalaya-web-thread-view-v1", threadView ? "off" : "on"); setThreadView(!threadView); }}>Gespräche</button>{allLabels.length > 0 && <select aria-label="Nach Etikett filtern" value={activeLabelFilter} onChange={(event) => setLabelFilter(event.target.value)}><option value="">Etikett: alle</option>{allLabels.map((label) => <option key={label} value={label}>{label}</option>)}</select>}<button className="subtle-button" type="button" aria-pressed={selectMode} onClick={toggleSelectMode}>Auswählen</button><div className="density-toggle" role="group" aria-label="Listendichte"><button className="subtle-button" type="button" aria-pressed={density === "compact"} onClick={() => chooseDensity("compact")}>Kompakt</button><button className="subtle-button" type="button" aria-pressed={density === "comfortable"} onClick={() => chooseDensity("comfortable")}>Komfortabel</button></div><button className="subtle-button" disabled={page <= 1 || loadingMessages} onClick={() => setPage((value) => Math.max(1, value - 1))}>‹</button><span className="page-number">{page}</span><button className="subtle-button" disabled={(multiSource && page >= UNIFIED_INBOX_MAX_PAGE) || !unifiedHasMore || loadingMessages} onClick={() => setPage((value) => value + 1)}>›</button></div></div>
+          {allLabels.length > 0 && (
+            <div className="label-filter-bar" role="toolbar" aria-label="Etikettenfilter">
+              <button
+                type="button"
+                className={`label-filter-pill ${!activeLabelFilter ? "active" : ""}`}
+                onClick={() => setLabelFilter("")}
+              >
+                Alle
+              </button>
+              {allLabels.map((label) => {
+                const isActive = activeLabelFilter.toLocaleLowerCase("de-DE") === label.toLocaleLowerCase("de-DE");
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    style={hueStyle(labelHueIndex(label))}
+                    className={`label-filter-pill ${isActive ? "active" : ""}`}
+                    onClick={() => setLabelFilter(isActive ? "" : label)}
+                    aria-pressed={isActive}
+                  >
+                    <span className="label-dot" aria-hidden="true" />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {selectMode && <div className="bulk-bar" role="group" aria-label="Mehrfachauswahl">
             <strong>{checked.size} ausgewählt</strong>
             <button className="subtle-button" type="button" onClick={() => setChecked(new Set(envelopes.map(checkKey)))}>Alle auf dieser Seite</button>
@@ -1768,6 +1923,22 @@ function App(): JSX.Element {
               <option value="">Verschieben nach …</option>
               {mailboxes.filter((mailbox) => mailbox.id !== selectedMailbox).map((mailbox) => <option key={mailbox.id} value={mailbox.id}>{mailbox.name}</option>)}
             </select>}
+            {allLabels.length > 0 && (
+              <select
+                aria-label="Etikett für Auswahl"
+                disabled={checked.size === 0 || bulkBusy}
+                value=""
+                onChange={(event) => {
+                  const val = event.target.value;
+                  if (val) void bulkLabel(val);
+                }}
+              >
+                <option value="">Etikett zuweisen …</option>
+                {allLabels.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            )}
           </div>}
           {multiSource && unifiedWarnings.length > 0 && <div className="unified-warnings" role="status">
             <strong>{affectedAccountCount} {affectedAccountCount === 1 ? "Konto betroffen" : "Konten betroffen"}</strong>
@@ -1856,8 +2027,17 @@ function App(): JSX.Element {
               </div>
               <div className="label-bar" aria-label="Etiketten">
                 <span className="eyebrow">ETIKETTEN</span>
-                {readerLabels.map((label) => <span className="label-chip" key={label}>{label}<button type="button" aria-label={`Etikett entfernen: ${label}`} onClick={() => void saveLabels(detail.ref, readerLabels.filter((item) => item !== label))}><IconClose size={12} /><span className="visually-hidden">×</span></button></span>)}
-                <input aria-label="Etikett hinzufügen" placeholder="Etikett hinzufügen …" maxLength={60} value={labelDraft} onChange={(event) => setLabelDraft(event.target.value)}
+                {readerLabels.map((label) => (
+                  <span className="label-chip" key={label} style={hueStyle(labelHueIndex(label))}>
+                    <span className="label-dot" aria-hidden="true" />
+                    <span>{label}</span>
+                    <button type="button" aria-label={`Etikett entfernen: ${label}`} onClick={() => void saveLabels(detail.ref, readerLabels.filter((item) => item !== label))}>
+                      <IconClose size={12} />
+                      <span className="visually-hidden">×</span>
+                    </button>
+                  </span>
+                ))}
+                <input ref={labelInputRef} aria-label="Etikett hinzufügen" placeholder="Etikett hinzufügen …" maxLength={60} value={labelDraft} onChange={(event) => setLabelDraft(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key !== "Enter") return;
                     event.preventDefault();
@@ -1914,7 +2094,7 @@ function App(): JSX.Element {
       {shortcutsOpen && <div className="account-manager-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setShortcutsOpen(false); }}>
         <section className="account-manager shortcuts-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
           <div className="account-manager-header"><div><span className="eyebrow">TASTATUR</span><h2 id="shortcuts-title">Tastenkürzel</h2></div><button className="icon-button" type="button" onClick={() => setShortcutsOpen(false)} aria-label="Tastenkürzel schließen" autoFocus><IconClose size={18} /><span className="visually-hidden">×</span></button></div>
-          <dl className="shortcut-list"><div><dt><kbd>Strg + K</kbd></dt><dd>Befehlspalette: Konto, Ordner oder Aktion suchen</dd></div>{SHORTCUTS.map((item) => <div key={item.action}><dt><kbd>{item.keys}</kbd></dt><dd>{item.label}</dd></div>)}</dl>
+          <dl className="shortcut-list"><div><dt><kbd>Strg + K</kbd></dt><dd>Befehlspalette: Konto, Ordner oder Aktion suchen</dd></div><div><dt><kbd>Alt + ← / →</kbd></dt><dd>Konto-Tab nach links oder rechts verschieben</dd></div>{SHORTCUTS.map((item) => <div key={item.action}><dt><kbd>{item.keys}</kbd></dt><dd>{item.label}</dd></div>)}</dl>
         </section>
       </div>}
       {accountManagerOpen && <div className="account-manager-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setAccountManagerOpen(false); }}>

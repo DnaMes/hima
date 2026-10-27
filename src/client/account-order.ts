@@ -64,3 +64,18 @@ export function moveAccount(
   [moved[from], moved[to]] = [moved[to]!, moved[from]!];
   return moved;
 }
+
+export function reorderAccountTo(
+  order: readonly string[],
+  accountName: string,
+  targetAccountName: string,
+): string[] {
+  const from = order.indexOf(accountName);
+  const to = order.indexOf(targetAccountName);
+  if (from < 0 || to < 0 || from === to) return [...order];
+
+  const moved = [...order];
+  const [target] = moved.splice(from, 1);
+  moved.splice(to, 0, target!);
+  return moved;
+}

@@ -26,3 +26,15 @@ export function addLabels(current: readonly string[], typed: string): string[] |
   for (const label of additions) if (!hasLabel(next, label)) next.push(label);
   return next.length > current.length && next.length <= LABELS_PER_MESSAGE ? next : null;
 }
+
+/** Deterministically maps a label name to a hue index 0..7. */
+export function labelHueIndex(name: string): number {
+  let hash = 0x811c9dc5;
+  const normalized = name.toLocaleLowerCase("de-DE").trim();
+  for (let i = 0; i < normalized.length; i += 1) {
+    hash ^= normalized.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return Math.abs(hash) % 8;
+}
+

@@ -45,6 +45,13 @@ test("labels a message, shows chips, filters by label and keeps them across a re
   await page.getByLabel("Nach Etikett filtern").selectOption("");
   await expect(page.locator(".envelope-row")).toHaveCount(2);
 
+  // Interactive tag filter pills in the message view
+  await expect(page.locator(".label-filter-bar")).toBeVisible();
+  await page.locator(".label-filter-pill", { hasText: "Steuer" }).click();
+  await expect(page.locator(".envelope-row")).toHaveCount(1);
+  await page.locator(".label-filter-pill", { hasText: "Alle" }).click();
+  await expect(page.locator(".envelope-row")).toHaveCount(2);
+
   await page.reload();
   await expect(page.locator(".envelope-row", { hasText: "First synthetic" }).locator(".row-label")).toHaveText(["Rechnung", "Steuer"]);
 

@@ -3,6 +3,7 @@ import type { JSX } from "react";
 
 import type { Envelope } from "../shared/types.js";
 import { hueStyle } from "./hue-style.js";
+import { labelHueIndex } from "./labels.js";
 import type { ListDensity } from "./list-density.js";
 import { isSentMailbox } from "./preferences.js";
 import { groupThreads } from "./threads.js";
@@ -150,7 +151,12 @@ export function MessageList({
             <span className="envelope-source" title={envelope.source.account}>{`${envelope.source.account} · ${envelope.source.mailbox}`}</span>
           )}
           <span className="envelope-subject">{envelope.subject || "(ohne Betreff)"}</span>
-          {(labelsFor(envelope) ?? []).map((label) => <span className="row-label" key={label}>{label}</span>)}
+          {(labelsFor(envelope) ?? []).map((label) => (
+            <span className="row-label" key={label} style={hueStyle(labelHueIndex(label))}>
+              <span className="label-dot" aria-hidden="true" />
+              <span>{label}</span>
+            </span>
+          ))}
         </span>
         <span className="envelope-badges">
           {envelopeBadges(envelope).map((badge) => (

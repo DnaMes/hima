@@ -1,5 +1,5 @@
 export type ShortcutAction =
-  | "next" | "previous" | "reply" | "reply-all" | "forward" | "delete" | "toggle-seen" | "search" | "help" | "compose";
+  | "next" | "previous" | "reply" | "reply-all" | "forward" | "delete" | "archive" | "toggle-seen" | "label" | "search" | "help" | "compose";
 
 export type ShortcutEvent = {
   key: string;
@@ -16,7 +16,9 @@ export const SHORTCUTS: ReadonlyArray<{ keys: string; action: ShortcutAction; la
   { keys: "a", action: "reply-all", label: "Allen antworten" },
   { keys: "f", action: "forward", label: "Weiterleiten" },
   { keys: "# / Entf", action: "delete", label: "Löschen (zuerst Papierkorb)" },
+  { keys: "e", action: "archive", label: "Archivieren" },
   { keys: "u", action: "toggle-seen", label: "Gelesen / ungelesen umschalten" },
+  { keys: "l", action: "label", label: "Etikett fokussieren" },
   { keys: "c", action: "compose", label: "Neue Nachricht" },
   { keys: "/", action: "search", label: "Suche fokussieren" },
   { keys: "?", action: "help", label: "Tastenkürzel anzeigen" },
@@ -24,7 +26,7 @@ export const SHORTCUTS: ReadonlyArray<{ keys: string; action: ShortcutAction; la
 
 const BY_KEY: Record<string, ShortcutAction> = {
   j: "next", k: "previous", r: "reply", a: "reply-all", f: "forward",
-  "#": "delete", Delete: "delete", u: "toggle-seen", c: "compose", "/": "search", "?": "help",
+  "#": "delete", Delete: "delete", e: "archive", u: "toggle-seen", l: "label", c: "compose", "/": "search", "?": "help",
 };
 
 function isTypingTarget(target: EventTarget | null): boolean {
