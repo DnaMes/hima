@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export const THEME_STORAGE_KEY = "himalaya-web-theme-v1";
 
 export const SEMANTIC_THEME_KEYS = [

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { Mailbox } from "../shared/types.js";
 
 export type InitialView = "unified" | "account";

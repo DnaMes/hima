@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { describe, expect, it } from "vitest";
 
 import type { Mailbox } from "../shared/types.js";

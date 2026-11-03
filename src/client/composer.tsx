@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 // src/client/composer.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";

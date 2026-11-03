@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export type PreviewKind = "image" | "pdf" | "text";
 
 export const PREVIEW_MAX_BYTES = 15 * 1024 * 1024;

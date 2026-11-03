@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 declare module "mailparser" {
   export type MailAddress = {
     address?: string;

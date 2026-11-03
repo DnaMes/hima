@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { describe, expect, it } from "vitest";
 
 import { addLabels, hasLabel, labelHueIndex, labelNames } from "./labels.js";

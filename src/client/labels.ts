@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export type LabeledMessage = { account: string; mailbox: string; message: string; labels: string[] };
 
 export const LABELS_PER_MESSAGE = 5;

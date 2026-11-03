@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { CommandResult } from "./himalaya.js";
 import { HimalayaError } from "./himalaya.js";
 

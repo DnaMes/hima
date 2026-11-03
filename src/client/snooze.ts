@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export type SnoozedMessage = { account: string; mailbox: string; message: string; until: string; subject?: string };
 
 export const snoozeKey = (ref: { account: string; mailbox: string; message: string }): string =>

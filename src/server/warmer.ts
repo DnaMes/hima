@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { HimalayaService } from "./himalaya.js";
 import { SOURCE_CONCURRENCY } from "./unified-inbox.js";
 

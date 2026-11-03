@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { beginSessionRecovery, clearSessionRecovery } from "./session-recovery.js";
 import type { ApiError } from "../shared/types.js";
 

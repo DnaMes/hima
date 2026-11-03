@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";

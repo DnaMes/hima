@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export type GroupKey = "today" | "yesterday" | "this-week" | "last-week" | "older" | "none";
 
 export const GROUP_LABELS: Record<GroupKey, string> = {

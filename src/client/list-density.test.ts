@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { describe, expect, it } from "vitest";
 
 import { LIST_DENSITY_KEY, readListDensity, resolveListDensity, writeListDensity } from "./list-density.js";

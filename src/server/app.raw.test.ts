@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 

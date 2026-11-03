@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { z } from "zod";
 
 import type { MessageRef } from "../shared/types.js";

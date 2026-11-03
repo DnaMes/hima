@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export type SearchScope = "folder" | "account" | "all";
 export type SearchFlag = "flagged" | "seen" | "unseen" | "answered";
 

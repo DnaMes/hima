@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { useId, type JSX, type SVGProps } from "react";
 
 export type ProviderId =

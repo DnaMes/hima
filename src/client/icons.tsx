@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { JSX, SVGProps } from "react";
 
 export type IconProps = SVGProps<SVGSVGElement> & {

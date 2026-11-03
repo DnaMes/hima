@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export type PaletteCommand = { id: string; label: string; hint?: string; run: () => void };
 
 /** Case-insensitive substring match on every word of the query; the order of the commands is kept. */

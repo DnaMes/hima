@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { RuleActionDto, RuleDto } from "../shared/types.js";
 
 export const MAX_RULES = 100;

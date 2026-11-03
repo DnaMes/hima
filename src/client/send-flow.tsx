@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 

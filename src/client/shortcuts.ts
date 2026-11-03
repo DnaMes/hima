@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export type ShortcutAction =
   | "next" | "previous" | "reply" | "reply-all" | "forward" | "delete" | "archive" | "toggle-seen" | "label" | "search" | "help" | "compose";
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { Envelope, UnifiedWarning } from "../shared/types.js";
 
 export type CachedList = { envelopes: Envelope[]; warnings: UnifiedWarning[]; hasMore: boolean };

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { SEARCH_MAX_SOURCES, type Mailbox, type UnifiedWarning } from "../shared/types.js";
 import { HimalayaError, type HimalayaService } from "./himalaya.js";
 

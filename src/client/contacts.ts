@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { Envelope } from "../shared/types.js";
 
 export type Contact = { email: string; name: string | null };

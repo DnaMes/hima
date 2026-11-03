@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createOutbox } from "./outbox.js";

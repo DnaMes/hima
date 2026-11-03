@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { Address, MessageDetail } from "../shared/types.js";
 
 const formatAddress = (address: Address): string => (address.name ? `${address.name} <${address.email}>` : address.email);

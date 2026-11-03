@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export const IMAGE_SENDERS_KEY = "himalaya-web-image-senders-v1";
 
 /** Number of http(s) images in a message's HTML, which the reader blocks until the operator allows them. */

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { JSX } from "react";
 
 import type { SenderInfo } from "../shared/types.js";

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { domainToUnicode } from "node:url";
 
 import { getDomain, parse } from "tldts";

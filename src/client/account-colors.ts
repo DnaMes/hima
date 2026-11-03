@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export const ACCOUNT_COLORS_KEY = "himalaya-web-account-colors-v1";
 export const ACCOUNT_HUE_COUNT = 8;
 export const ACCOUNT_HUE_NAMES = ["Violett", "Türkis", "Bernstein", "Rosé", "Himmelblau", "Orange", "Limette", "Magenta"] as const;

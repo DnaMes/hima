@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { simpleParser } from "mailparser";
 
 import type { Address, Attachment, Envelope, MessageDetail, MessageRef, ReceivedHop, SenderInfo, Unsubscribe } from "../shared/types.js";

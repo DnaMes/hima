@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { spawn } from "node:child_process";
 
 export type Notifier = (title: string, body: string) => void;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import {
   UNIFIED_INBOX_MAX_PAGE,
   type Envelope,

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { Address, Attachment, MessageDetail } from "../shared/types.js";
 
 const BLOCK_TAGS = /<\/?(?:br|div|li|p|section|table|tr|h[1-6])\b[^>]*>/gi;

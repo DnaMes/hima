@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { describe, expect, it, vi } from "vitest";
 
 import { createWarmer } from "./warmer.js";

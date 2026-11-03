@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export const SESSION_RECOVERY_KEY = "himalaya-web-session-recovery-v1";
 
 export type RecoveryStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { randomBytes } from "node:crypto";
 
 export type OutboxStatus = "queued" | "sending" | "sent" | "failed" | "cancelled";

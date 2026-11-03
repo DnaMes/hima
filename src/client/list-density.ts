@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 export type ListDensity = "compact" | "comfortable";
 
 export const LIST_DENSITY_KEY = "himalaya-web-list-density-v1";

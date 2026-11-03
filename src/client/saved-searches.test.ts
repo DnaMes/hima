@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_FILTERS, type SearchFilters } from "./search-state.js";

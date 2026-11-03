@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import packageJson from "../../package.json";
 
 export const APP_NAME = "Hima";

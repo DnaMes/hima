@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { SEARCH_MAX_SOURCES, type MessageRef, type UnifiedInboxResult, type UnifiedWarning } from "../shared/types.js";
 import { DEFAULT_FILTERS, searchBody, type SearchFilters } from "./search-state.js";
 

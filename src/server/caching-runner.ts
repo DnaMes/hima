@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { CommandResult, CommandRunner, RunOptions } from "./himalaya.js";
 
 const DEFAULT_TTL_MS = 45_000;

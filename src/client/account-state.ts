@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import type { Account } from "../shared/types.js";
 
 export const ACCOUNT_STATE_KEY = "himalaya-web-account-state-v1";

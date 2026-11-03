@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { messageRef } from "./contracts.js";
 import type { Envelope, Mailbox, MessageRef, Risk } from "../shared/types.js";
 import { HimalayaError, type HimalayaService } from "./himalaya.js";
