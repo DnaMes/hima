@@ -3,13 +3,15 @@
 Hima ships as source: a checksummed `hima-<version>.tar.gz` attached to a GitHub
 release. There is no store upload and no packaged binary.
 
-Current version: **0.36.1** (`package.json` is the single source of truth;
+Current version: **0.37.0** (`package.json` is the single source of truth;
 `src/shared/app-meta.ts` reads it).
 
 ## Cutting a release
 
 1. Update `CHANGELOG.md` with a `## <version> — <date>` section (the release
-   notes are cut from it) and bump the version: `npm version <x.y.z> --no-git-tag-version`.
+   notes are cut from it) and bump the version: `npm version <x.y.z> --no-git-tag-version` (this updates
+   `package-lock.json` too; commit both, and check that `git diff package-lock.json`
+   shows the new version in its root and `packages[""]` entries).
 2. Update the version assertion in `src/shared/app-meta.test.ts`.
 3. Run `npm run typecheck && npm test && npm run build && npm run test:e2e && npm audit --omit=dev --audit-level=high`.
 4. Re-render the README screenshots if the UI changed:
