@@ -132,7 +132,7 @@ npm run dev
 SCREENSHOTS=1 npx playwright test tests/e2e/screenshots.spec.ts
 ```
 
-Releases are cut from annotated `vX.Y.Z` tags; see [RELEASE.md](RELEASE.md) and [CHANGELOG.md](CHANGELOG.md).
+Releases are cut from annotated `vX.Y.Z` tags; see [RELEASE.md](RELEASE.md) and [CHANGELOG.md](CHANGELOG.md). What Hima stores and sends: [PRIVACY.md](PRIVACY.md).
 
 ---
 
