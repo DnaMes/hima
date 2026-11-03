@@ -12,7 +12,7 @@ automated tests.
 ## Quick state (read this first)
 
 - Released: **0.37.0** (tag `v0.37.0`, `package.json`) — **Hima** ("Your local mail workspace, powered by Himalaya"), public at `https://github.com/DnaMes/hima`. Release history: `CHANGELOG.md`. Which version the local `himalaya-web.service` runs is not tracked here; check the tree it starts from. Earlier milestones: 0.35.0 (auth bypass fix, draft isolation, vector logos, horizontal tabs), 0.34.0 (middle frame), 0.33.0 (tabs), 0.32.0 (slim header), 0.30.0 (vector logos), 0.28.7 (threading).
-- Health: typecheck/build clean; unit 770/770 passing across 57 test files; Playwright 133/133 passing; `npm audit --omit=dev` 0 vulnerabilities. Live service: `systemctl --user status himalaya-web.service` active and healthy at `http://127.0.0.1:47831/`.
+- Health: typecheck/build clean; unit 775/775 passing across 57 test files (2026-11-03); Playwright 133/133 at 0.35.0, not re-run since; `npm audit --omit=dev` 0 vulnerabilities. Live service: `systemctl --user status himalaya-web.service` active and healthy at `http://127.0.0.1:47831/`.
 - Repositories:
   - **Canonical:** `~/projects/business/erdlabs/apps/hima` (git origin: `git@github-personal:DnaMes/hima.git`). All changes land here.
   - Legacy: `~/projects/tools/himalaya-web` points at the retired Forgejo host (`100.119.46.15`). Do not commit or push there; it is kept only because the local systemd service may still start from it.

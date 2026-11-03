@@ -44,7 +44,7 @@ your network can reach it.
   cookies.
 
 Delete those files and the site data of `127.0.0.1:47831` in your browser to
-remove everything Hima kept.
+remove everything Hima kept locally.
 
 ## Children
 
