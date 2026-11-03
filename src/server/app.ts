@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import fastifyStatic from "@fastify/static";
 import multipart from "@fastify/multipart";
@@ -183,10 +185,17 @@ function validToken(request: FastifyRequest, token: string): boolean {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-function loopbackHost(value: string | undefined): boolean {
-  if (!value) return false;
-  const host = value.replace(/^\[/, "").replace(/\](:\d+)?$/, "").split(":")[0];
-  return host === "127.0.0.1" || host === "localhost" || host === "::1";
+export function loopbackHost(value: string | undefined): boolean {
+  // A Host header is host[:port] only; userinfo, paths or whitespace mean someone is playing games.
+  if (!value || /[@/?#\\\s]/.test(value)) return false;
+  let host: string;
+  try {
+    // URL parsing handles ports and bracketed IPv6 ("[::1]:47831" -> "[::1]").
+    host = new URL(`http://${value}`).hostname;
+  } catch {
+    return false;
+  }
+  return host === "127.0.0.1" || host === "localhost" || host === "[::1]";
 }
 
 function loopbackOrigin(value: string | undefined): boolean {
@@ -776,7 +785,9 @@ export async function createApp(service: HimalayaService, options: AppOptions): 
     reply
       .header("Cache-Control", "no-store")
       .header("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(result.filename)}`)
-      .type(selected.mime ?? "application/octet-stream");
+      .header("X-Content-Type-Options", "nosniff")
+      // Never the mail's own MIME claim: a sender could label HTML as anything and have it render on this origin.
+      .type("application/octet-stream");
     return reply.send(result.data);
   });
 

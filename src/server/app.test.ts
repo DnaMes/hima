@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 erdlabs
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -5,7 +7,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Account, Attachment, Envelope, Mailbox, MessageDetail, MessageRef } from "../shared/types.js";
-import { createApp, type HimalayaService } from "./app.js";
+import { createApp, loopbackHost, type HimalayaService } from "./app.js";
 import type { AiProvider } from "./ai.js";
 import { HimalayaError } from "./himalaya.js";
 
@@ -459,6 +461,37 @@ describe("local API", () => {
       retryable: false,
     });
     await app.close();
+  });
+
+  it("serves attachments as octet-stream with nosniff, never with the mail's own MIME claim", async () => {
+    const service: HimalayaService = {
+      ...fakeService(),
+      listAttachments: async () => [{ ...attachment, mime: "text/html" }],
+    };
+    const app = await createApp(service, { token: "test-token" });
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/attachment?account=andre&mailbox=INBOX&message=7&attachment=2",
+      headers: { host: "127.0.0.1", "x-himalaya-session": "test-token" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["content-type"]).toBe("application/octet-stream");
+    expect(response.headers["x-content-type-options"]).toBe("nosniff");
+    expect(response.headers["content-disposition"]).toContain("attachment");
+    await app.close();
+  });
+
+  it.each([
+    ["127.0.0.1:47831", true],
+    ["localhost", true],
+    ["[::1]:47831", true],
+    ["evil.example", false],
+    ["127.0.0.1.evil.example", false],
+    ["user@127.0.0.1", false],
+    ["127.0.0.1:47831@evil.example", false],
+  ])("treats Host %s as loopback: %s", (host, expected) => {
+    expect(loopbackHost(host)).toBe(expected);
   });
 
   it("exports a selected message as Markdown with download headers", async () => {
