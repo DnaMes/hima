@@ -27,7 +27,8 @@ your network can reach it.
 - **Optional AI assist.** Only when you set `HIMALAYA_AI_API_KEY` does Hima
   enable summaries and reply drafts. Then, and only when you press one of
   those buttons, the text of that one message or draft is sent over HTTPS to
-  the configured provider (MiniMax by default, `HIMALAYA_AI_BASE_URL`). That
+  the configured provider (MiniMax by default, `HIMALAYA_AI_BASE_URL`, which must be
+  an `https://` address or the feature stays off). That
   provider's own privacy policy applies to it. Without the key nothing is sent.
 - Nothing else. No usage statistics, crash reports or diagnostics are produced
   or transmitted.
@@ -43,7 +44,8 @@ your network can reach it.
   the last opened account and folder, and autosaved drafts. Hima sets no
   cookies.
 
-Delete those files and the site data of `127.0.0.1:47831` in your browser to
+Delete those files and the site data of the address you open Hima at
+(`127.0.0.1:47831`, or `localhost:47831`) in your browser to
 remove everything Hima kept locally.
 
 ## Children
