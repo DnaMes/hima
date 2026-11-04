@@ -4,6 +4,8 @@
 
 Hima (formerly Himalaya Web) provides a desktop-grade browser interface for the [Himalaya](https://github.com/soywod/himalaya) CLI. It stays strictly bound to loopback (`127.0.0.1`), keeps your mail and credentials on your machine, and uses your existing desktop keyring and Himalaya account configuration.
 
+Part of the [erdlabs](https://erdlabs.com) label.
+
 ![Hima with the Midnight theme](docs/screenshots/hima-midnight.png)
 
 <details><summary>Light theme (Catppuccin Latte)</summary>
