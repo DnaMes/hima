@@ -141,3 +141,5 @@ Releases are cut from annotated `vX.Y.Z` tags; see [RELEASE.md](RELEASE.md) and 
 ## License
 
 [MIT](LICENSE) © 2026 erdlabs / André Semek
+
+Hima stays MIT on purpose. It is a public developer tool and a loopback-only front end that runs the MIT-licensed Himalaya CLI as a subprocess, and it has been MIT since its first public commit. The rest of the erdlabs label is GPL-3.0-or-later or AGPL-3.0; Hima is the one named exception (rule 3 in the label's `AGENTS.md`, decided 2026-11-05). A hosted or multi-user mode would trigger a new licence review.

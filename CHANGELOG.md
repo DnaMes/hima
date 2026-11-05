@@ -8,6 +8,7 @@ All notable changes to the standalone Himalaya Web GUI are documented here.
 - The loopback Host check now parses IPv6 (`[::1]`) correctly; it rejected it before. The server still binds `127.0.0.1` only.
 - New `PRIVACY.md` explains what Hima stores locally and what it sends, including the opt-in AI assist.
 - `package-lock.json` now names the released version (0.37.0); source files carry SPDX licence headers.
+- Licence decision recorded: Hima stays MIT as a named exception to the label's copyleft default (hima#8). `LICENSE` and `package.json` are unchanged.
 
 ## 0.37.0 — 2026-10-27
 
