@@ -35,3 +35,17 @@ test.describe("browser language en", () => {
     await expect(page.getByText("Nothing found")).toBeVisible();
   });
 });
+
+test.describe("about panel", () => {
+  test.use({ locale: "de-DE" });
+  test("opens from the version badge and shows version, licence and label", async ({ page }) => {
+    await open(page);
+    await page.getByRole("button", { name: "Über Hima" }).click();
+    const dialog = page.getByRole("dialog", { name: "Über" });
+    await expect(dialog).toContainText(/Hima v\d+\.\d+\.\d+/);
+    await expect(dialog).toContainText("Lizenz: MIT");
+    await expect(dialog).toContainText("Teil von erdlabs");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+  });
+});

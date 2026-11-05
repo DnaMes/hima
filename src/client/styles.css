@@ -192,6 +192,9 @@ select option { background: var(--panel); color: var(--text); }
   letter-spacing: .02em;
   line-height: 1.2;
 }
+button.version-badge { cursor: pointer; font-family: inherit; }
+.about-dialog { max-width: 360px; }
+.about-dialog p { margin: 6px 0; }
 .status-dot {
   width: 8px;
   height: 8px;

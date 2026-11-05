@@ -23,4 +23,10 @@ export const de: Record<Key, string> = {
   "palette.placeholder": "Konto, Ordner oder Aktion …",
   "palette.inputAria": "Befehl suchen",
   "palette.empty": "Nichts gefunden",
+  "about.open": "Über Hima",
+  "about.title": "Über",
+  "about.close": "Info-Dialog schließen",
+  "about.version": "Hima {version}",
+  "about.licence": "Lizenz: {license}",
+  "about.label": "Teil von erdlabs",
 };

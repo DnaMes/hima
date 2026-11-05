@@ -4,6 +4,7 @@ All notable changes to the standalone Himalaya Web GUI are documented here.
 
 ## Unreleased
 
+- About panel (#3): the version badge in the top bar opens a small dialog with `Hima v<version>`, the licence (MIT) and `Part of erdlabs`, in English and German. The version and licence are read from `package.json`.
 - English and German UI, first slice (#5): a typed de/en catalog under `src/client/i18n/`, a language selector in the top bar (Automatic follows the browser language, an explicit choice is stored locally), and `<html lang>` follows the active language. The top bar and the command palette are translated; the remaining screens still show German and move over in follow-up changes. Browsers set to neither German nor English now get English.
 - Attachments are always downloaded as plain files (`application/octet-stream`, `X-Content-Type-Options: nosniff`), whatever type the sender claimed. Inline previews are unchanged.
 - The loopback Host check now parses IPv6 (`[::1]`) correctly; it rejected it before. The server still binds `127.0.0.1` only.

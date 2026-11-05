@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import DOMPurify from "dompurify";
 
 import { APP_NAME, APP_VERSION_LABEL } from "../shared/app-meta.js";
+import { AboutPanel } from "./about-panel.js";
 import type {
   Account,
   ApiError,
@@ -262,6 +263,7 @@ function App(): JSX.Element {
   const [accountManagerOpen, setAccountManagerOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [preview, setPreview] = useState<{ name: string; kind: PreviewKind; url: string; text: string } | null>(null);
@@ -1588,7 +1590,7 @@ function App(): JSX.Element {
         <div className="brand-lockup">
           <IconMail size={16} className="brand-icon" />
           <h1>{APP_NAME}</h1>
-          <span className="version-badge">{APP_VERSION_LABEL}</span>
+          <button className="version-badge" type="button" aria-haspopup="dialog" aria-label={t("about.open")} onClick={() => setAboutOpen(true)}>{APP_VERSION_LABEL}</button>
           <span className="visually-hidden">{t("app.tagline")}</span>
         </div>
         <div className="topbar-controls">
@@ -2103,6 +2105,7 @@ function App(): JSX.Element {
           </ul>
         </section>
       </div>}
+      {aboutOpen && <AboutPanel onClose={() => setAboutOpen(false)} />}
       {paletteOpen && <CommandPalette commands={paletteCommands} onClose={() => setPaletteOpen(false)} />}
       {shortcutsOpen && <div className="account-manager-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setShortcutsOpen(false); }}>
         <section className="account-manager shortcuts-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">

@@ -5,3 +5,4 @@ import packageJson from "../../package.json";
 export const APP_NAME = "Hima";
 export const APP_VERSION = packageJson.version;
 export const APP_VERSION_LABEL = `v${APP_VERSION}`;
+export const APP_LICENSE = packageJson.license;

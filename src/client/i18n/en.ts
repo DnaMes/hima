@@ -23,6 +23,12 @@ export const en = {
   "palette.placeholder": "Account, folder or action …",
   "palette.inputAria": "Search commands",
   "palette.empty": "Nothing found",
+  "about.open": "About Hima",
+  "about.title": "About",
+  "about.close": "Close about panel",
+  "about.version": "Hima {version}",
+  "about.licence": "Licence: {license}",
+  "about.label": "Part of erdlabs",
 } as const;
 
 export type Key = keyof typeof en;
