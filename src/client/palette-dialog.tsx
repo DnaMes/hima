@@ -5,8 +5,10 @@ import type { JSX } from "react";
 
 import { filterCommands } from "./command-palette.js";
 import type { PaletteCommand } from "./command-palette.js";
+import { useI18n } from "./i18n/index.js";
 
 export function CommandPalette({ commands, onClose }: { commands: readonly PaletteCommand[]; onClose: () => void }): JSX.Element {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const input = useRef<HTMLInputElement>(null);
@@ -35,15 +37,15 @@ export function CommandPalette({ commands, onClose }: { commands: readonly Palet
   }
 
   return <div className="account-manager-backdrop" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-    <section className="account-manager command-palette" role="dialog" aria-modal="true" aria-label="Befehlspalette" onKeyDown={onKeyDown}>
-      <input ref={input} className="palette-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Konto, Ordner oder Aktion …" aria-label="Befehl suchen" />
+    <section className="account-manager command-palette" role="dialog" aria-modal="true" aria-label={t("palette.aria")} onKeyDown={onKeyDown}>
+      <input ref={input} className="palette-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("palette.placeholder")} aria-label={t("palette.inputAria")} />
       <ul className="palette-list" role="listbox">
         {matches.map((command, index) => <li key={command.id} role="option" aria-selected={index === active}
           className={index === active ? "active" : undefined} onMouseEnter={() => setActive(index)}
           onClick={() => { onClose(); command.run(); }}>
           <span>{command.label}</span>{command.hint && <small>{command.hint}</small>}
         </li>)}
-        {matches.length === 0 && <li className="palette-empty">Nichts gefunden</li>}
+        {matches.length === 0 && <li className="palette-empty">{t("palette.empty")}</li>}
       </ul>
     </section>
   </div>;

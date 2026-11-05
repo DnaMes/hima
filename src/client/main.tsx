@@ -122,6 +122,8 @@ import {
   IconMail,
 } from "./icons.js";
 import { ProviderLogo, providerLabel } from "./provider-logos.js";
+import { setLocalePreference, useI18n } from "./i18n/index.js";
+import type { LocalePreference } from "./i18n/index.js";
 import "./styles.css";
 
 const PAGE_SIZE = 50;
@@ -210,6 +212,7 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
 });
 
 function App(): JSX.Element {
+  const { t, preference: localePreference } = useI18n();
   const token = useMemo(sessionToken, []);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountOrder, setAccountOrder] = useState<string[]>([]);
@@ -1586,41 +1589,49 @@ function App(): JSX.Element {
           <IconMail size={16} className="brand-icon" />
           <h1>{APP_NAME}</h1>
           <span className="version-badge">{APP_VERSION_LABEL}</span>
-          <span className="visually-hidden">Lokale Mail-Arbeitsfläche</span>
+          <span className="visually-hidden">{t("app.tagline")}</span>
         </div>
         <div className="topbar-controls">
           <label className="theme-picker">
             <IconTheme size={13} />
-            <span>Farbschema</span>
-            <select value={theme} onChange={(event) => selectTheme(event.target.value)} aria-label="Farbschema auswählen">
+            <span>{t("theme.label")}</span>
+            <select value={theme} onChange={(event) => selectTheme(event.target.value)} aria-label={t("theme.aria")}>
               {Object.entries(THEMES).map(([name, definition]) => <option key={name} value={name}>{definition.label}</option>)}
             </select>
           </label>
+          <label className="theme-picker">
+            <span>{t("language.label")}</span>
+            <select value={localePreference} onChange={(event) => setLocalePreference(event.target.value as LocalePreference)} aria-label={t("language.aria")}>
+              <option value="auto">{t("language.auto")}</option>
+              <option value="de">{t("language.de")}</option>
+              <option value="en">{t("language.en")}</option>
+            </select>
+          </label>
           <div className="topbar-meta">
-            <button className="primary-button topbar-btn compose-button" type="button" aria-label="Neue Nachricht" disabled={selectableAccounts.length === 0 || sendFlow.state.phase === "counting"} onClick={() => setComposerSeed({ mode: "new", account: selectedAccount ?? selectableAccounts[0]?.name ?? "" })}>
+            <button className="primary-button topbar-btn compose-button" type="button" aria-label={t("topbar.compose")} disabled={selectableAccounts.length === 0 || sendFlow.state.phase === "counting"} onClick={() => setComposerSeed({ mode: "new", account: selectedAccount ?? selectableAccounts[0]?.name ?? "" })}>
               <IconCompose size={13} />
-              <span>Neue Nachricht</span>
+              <span>{t("topbar.compose")}</span>
             </button>
-            <button ref={accountManagerButton} className="subtle-button topbar-btn manager-button" type="button" onClick={() => setAccountManagerOpen(true)} aria-haspopup="dialog" aria-expanded={accountManagerOpen} aria-label="Konten verwalten">
+            <button ref={accountManagerButton} className="subtle-button topbar-btn manager-button" type="button" onClick={() => setAccountManagerOpen(true)} aria-haspopup="dialog" aria-expanded={accountManagerOpen} aria-label={t("topbar.accountsAria")}>
               <IconSettings size={13} />
-              <span>Konten</span>
+              <span>{t("topbar.accounts")}</span>
             </button>
             <button className="subtle-button topbar-btn" type="button" aria-haspopup="dialog" onClick={() => setRulesOpen(true)}>
               <IconRules size={13} />
-              <span>Regeln</span>
+              <span>{t("topbar.rules")}</span>
             </button>
             <button className="subtle-button topbar-btn" type="button" aria-haspopup="dialog" onClick={() => setShortcutsOpen(true)}>
               <IconKeyboard size={13} />
-              <span>Tastenkürzel</span>
+              <span>{t("topbar.shortcuts")}</span>
             </button>
             {snoozed.length > 0 && (
               <button className="subtle-button topbar-btn" type="button" aria-haspopup="dialog" onClick={() => setSnoozedOpen(true)}>
                 <IconSnooze size={13} />
-                <span>Zurückgestellt ({snoozed.length})</span>
+                <span>{t("topbar.snoozed", { count: snoozed.length })}</span>
               </button>
             )}
-            <span>{selectableAccounts.length}/{accounts.length} Konten</span>
-            <span className="status-dot" /> lokal
+            <span>{t("topbar.accountCount", { ready: selectableAccounts.length, total: accounts.length })}</span>
+            <span className="status-dot" /> {t("topbar.local")}
           </div>
         </div>
       </header>

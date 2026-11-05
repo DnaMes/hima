@@ -11,6 +11,8 @@ export default defineConfig({
       executablePath: process.env.PW_EXECUTABLE_PATH ?? "/home/dnames/bin/chromium-ai",
     },
     ...devices["Desktop Chrome"],
+    // The suites select by German text; the UI follows the browser language.
+    locale: "de-DE",
   },
   webServer: {
     command: "npm run build && HIMALAYA_WEB_PORT=47832 npm run dev",

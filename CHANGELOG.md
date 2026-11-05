@@ -4,6 +4,7 @@ All notable changes to the standalone Himalaya Web GUI are documented here.
 
 ## Unreleased
 
+- English and German UI, first slice (#5): a typed de/en catalog under `src/client/i18n/`, a language selector in the top bar (Automatic follows the browser language, an explicit choice is stored locally), and `<html lang>` follows the active language. The top bar and the command palette are translated; the remaining screens still show German and move over in follow-up changes. Browsers set to neither German nor English now get English.
 - Attachments are always downloaded as plain files (`application/octet-stream`, `X-Content-Type-Options: nosniff`), whatever type the sender claimed. Inline previews are unchanged.
 - The loopback Host check now parses IPv6 (`[::1]`) correctly; it rejected it before. The server still binds `127.0.0.1` only.
 - New `PRIVACY.md` explains what Hima stores locally and what it sends, including the opt-in AI assist.

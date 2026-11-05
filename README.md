@@ -33,6 +33,7 @@ Part of the [erdlabs](https://erdlabs.com) label.
   - **Local Labels & Snooze:** Tag and organize messages locally without mutating server flags.
   - **Draft Autosave:** Non-blocking localStorage draft recovery namespaced per message and account.
   - **Keyboard Navigation:** Full vim-style (`j`/`k`, `r`, `a`, `e`, `s`, `x`, `?`) keyboard shortcuts and `Ctrl+K` command palette.
+  - **English and German:** The UI follows the browser language and can be switched in the top bar (stored locally). The catalog lives in `src/client/i18n/` (`en.ts` is the template, `de.ts` must carry the same keys); translation is being rolled out component by component, see issue #5.
   - **Themes:** Built-in Midnight, VS Code Dark, Catppuccin Mocha, Catppuccin Latte, Nord, and Tokyo Night.
 
 ---
